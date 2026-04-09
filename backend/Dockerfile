@@ -1,20 +1,19 @@
 FROM python:3.12-slim
 
-ARG PORT=80
-
-ADD https://astral.sh/uv/install.sh /install.sh
-RUN chmod -R 755 /install.sh && /install.sh && rm /install.sh
-
-ENV PATH="/root/.local/bin:${PATH}"
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 WORKDIR /app
 
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=never \
+    PYTHONUNBUFFERED=1
+
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-cache
+
 COPY . .
 
-RUN uv sync
+EXPOSE 8000
 
-ENV PATH="/app/.venv/bin:${PATH}"
-
-EXPOSE $PORT
-
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
