@@ -1,0 +1,65 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: reflectboard
+      POSTGRES_PASSWORD: reflectboard
+      POSTGRES_DB: reflectboard
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reflectboard -d reflectboard"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: ./backend
+    ports:
+      - "8000:80"
+    env_file: ./backend/.env
+    volumes:
+      - ./backend:/app # hot-relaod
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  analytics:
+    image: php:8.3-fpm-alpine
+    volumes:
+      - ./analytics/:/var/www/analytics
+    depends_on:
+      - redis
+    # заглушка
+
+  # docker compose run --rm migrate (только вручную)
+  migrate:
+    build: ./backend
+    env_file: ./backend/.env
+    command: alembic upgrade head
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles:
+      - tools
+
+volumes:
+  postgres_data:
+  redis_data:
