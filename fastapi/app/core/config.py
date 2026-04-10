@@ -1,13 +1,13 @@
-import os
-
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = os.getenv(
-        "DATABASE_URL", "postgresql+asyncpg://user:pass@db:5432/reflectboard"
+    DATABASE_URL: str = (
+        "mysql+aiomysql://reflectboard:reflectboard@db:3306/reflectboard"
     )
-    REDIS_URL: str = os.getenv("REDIS_URL", "redis://redis:6379/0")
+    REDIS_URL: str = "redis://redis:6379/0"
+
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
 settings = Settings()
