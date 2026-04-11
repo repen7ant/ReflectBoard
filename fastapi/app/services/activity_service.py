@@ -30,8 +30,12 @@ class ActivityService:
         activity = Activity(**data.model_dump())
         db.add(activity)
         await db.commit()
-        await db.refresh(activity, ["category"])
-        return activity
+        result = await db.execute(
+            select(Activity)
+            .options(selectinload(Activity.category))
+            .where(Activity.id == activity.id)
+        )
+        return result.scalar_one()
 
     @staticmethod
     async def delete_activity(
@@ -59,5 +63,9 @@ class ActivityService:
             return None
         activity.status = status
         await db.commit()
-        await db.refresh(activity)
-        return activity
+        result = await db.execute(
+            select(Activity)
+            .options(selectinload(Activity.category))
+            .where(Activity.id == activity_id)
+        )
+        return result.scalar_one()
