@@ -7,7 +7,12 @@ RUN apk add --no-cache \
     libzip-dev \
     zip \
     unzip \
-    && docker-php-ext-install pdo_mysql gd zip bcmath opcache
+    autoconf \
+    g++ \
+    make \
+    && docker-php-ext-install pdo_mysql gd zip bcmath opcache \
+    && pecl install redis \
+    && docker-php-ext-enable redis
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
