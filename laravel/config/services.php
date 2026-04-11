@@ -35,4 +35,7 @@ return [
         ],
     ],
 
+    'api_base' => [
+        'url' => env('API_URL', 'http://reflectboard-api.local/api/v1'),
+    ],
 ];
