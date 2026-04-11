@@ -26,3 +26,20 @@ class ActivityOut(BaseModel):
     category: CategoryOut | None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ActivityCreate(BaseModel):
+    user_id: int
+    category_id: int | None = None
+    parent_id: int | None = None
+    title: str
+    description: str | None = None
+    status: Status = Status.backlog
+    is_project: bool = False
+    is_quick_capture: bool = False
+    deadline: datetime | None = None
+    tags: list | None = None
+
+
+class StatusUpdate(BaseModel):
+    status: Status
