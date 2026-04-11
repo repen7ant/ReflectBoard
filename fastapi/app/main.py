@@ -3,4 +3,4 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-app.include_router(activity_router, prefix="/api/v1")
+app.include_router(activity_router)
