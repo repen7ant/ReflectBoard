@@ -6,8 +6,8 @@ services:
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-reflectboard}
       MYSQL_USER: ${MYSQL_USER:-reflectboard}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-reflectboard}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_password}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-reflectboard}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
     ports:
       - "3306:3306"
     volumes:
