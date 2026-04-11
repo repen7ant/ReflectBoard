@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
 Route::get('/', function () {
@@ -17,3 +18,12 @@ Route::get('/health/db', function () {
     $result = DB::select('SELECT 1 as result');
     return response()->json(['status' => 'ok', 'result' => $result]);
 });
+
+Route::middleware('auth')->group(function () {
+    Route::get('/board', fn() => view('board'))->name('board');
+    Route::get('/done', fn() => view('done'))->name('done');
+    Route::get('/analytics', fn() => view('analytics'))->name('analytics');
+});
+
+Route::get('/login', fn() => 'login page coming soon')->name('login');
+Route::get('/register', fn() => 'register page coming soon')->name('register');
