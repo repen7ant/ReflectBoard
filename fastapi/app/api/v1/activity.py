@@ -1,6 +1,6 @@
 from app.db.session import get_db
 from app.models.activity import Status
-from app.schemas.activity import ActivityCreate, ActivityOut, StatusUpdate
+from app.schemas.activity import ActivityCreate, ActivityOut, ActivityUpdate
 from app.services.activity_service import ActivityService
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -37,13 +37,17 @@ async def delete_activity(
         raise HTTPException(status_code=404, detail="Activity not found")
 
 
-@router.patch("/activities/{activity_id}/status", response_model=ActivityOut)
-async def update_activity_status(
+@router.patch("/activities/{activity_id}", response_model=ActivityOut)
+async def update_activity(
     activity_id: int,
-    data: StatusUpdate,
+    data: ActivityUpdate,
     db: AsyncSession = Depends(get_db),
 ):
-    activity = await ActivityService.update_status(db, activity_id, data.status)
+    update_dict = data.model_dump(exclude_unset=True)
+
+    activity = await ActivityService.update_activity(db, activity_id, update_dict)
+
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
+
     return activity

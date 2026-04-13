@@ -13,6 +13,8 @@ class ActivityOut(BaseModel):
     category_id: int | None
     title: str
     description: str | None
+    reflection_text: str | None
+    time_spent_minutes: int | None
     status: Status
     is_project: bool
     is_on_board: bool
@@ -24,8 +26,17 @@ class ActivityOut(BaseModel):
     updated_at: datetime
 
     category: CategoryOut | None
-
     model_config = ConfigDict(from_attributes=True)
+
+
+class ActivityUpdate(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    category_id: int | None = None
+    status: Status | None = None
+    reflection_text: str | None = None
+    time_spent_minutes: int | None = None
+    deadline: datetime | None = None
 
 
 class ActivityCreate(BaseModel):
@@ -39,7 +50,3 @@ class ActivityCreate(BaseModel):
     is_quick_capture: bool = False
     deadline: datetime | None = None
     tags: list | None = None
-
-
-class StatusUpdate(BaseModel):
-    status: Status

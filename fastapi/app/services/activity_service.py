@@ -1,6 +1,6 @@
 from app.models.activity import Activity, Status
 from app.schemas.activity import ActivityCreate
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -50,8 +50,8 @@ class ActivityService:
         return True
 
     @staticmethod
-    async def update_status(
-        db: AsyncSession, activity_id: int, status: Status
+    async def update_activity(
+        db: AsyncSession, activity_id: int, update_data: dict
     ) -> Activity | None:
         result = await db.execute(
             select(Activity)
@@ -59,13 +59,18 @@ class ActivityService:
             .where(Activity.id == activity_id)
         )
         activity = result.scalar_one_or_none()
+
         if not activity:
             return None
-        activity.status = status
+
+        for key, value in update_data.items():
+            if hasattr(activity, key):
+                setattr(activity, key, value)
+
+        if update_data.get("status") == Status.done:
+            activity.completed_at = func.now()
+
         await db.commit()
-        result = await db.execute(
-            select(Activity)
-            .options(selectinload(Activity.category))
-            .where(Activity.id == activity_id)
-        )
-        return result.scalar_one()
+
+        await db.refresh(activity)
+        return activity
