@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -9,12 +9,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/board.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 <body x-data="board()" x-init="init()">
 
@@ -118,7 +120,13 @@
 
                 <div class="field">
                     <label>Deadline</label>
-                    <input type="datetime-local" x-model="modal.deadline">
+                    <input
+                        type="text"
+                        id="deadline-picker"
+                        x-model="modal.deadline"
+                        placeholder="Select date..."
+                        readonly
+                    >
                 </div>
 
                 <div class="modal-actions">
@@ -228,11 +236,19 @@
                     activity: null,
                 },
                 toast: { show: false, message: '' },
+                fp: null,
 
                 async init() {
                     await this.loadActivities()
                     await this.loadCategories()
-                    this.$nextTick(() => this.initSortable())
+
+                    this.$nextTick(() => {
+                        this.initSortable()
+                    });
+
+                    window.addEventListener('clear-date', () => {
+                                    if (this.fp) this.fp.clear();
+                    });
                 },
 
                 async loadActivities() {
@@ -284,8 +300,39 @@
                     })
                 },
 
+                initDatePicker() {
+                    const el = document.getElementById('deadline-picker');
+                    if (!el) return;
+
+                    if (this.fp) this.fp.destroy();
+
+                    this.fp = flatpickr(el, {
+                        enableTime: true,
+                        time_24hr: true,
+                        disableMobile: true,
+                        dateFormat: "Y-m-d H:i",
+                        altInput: true,
+                        altFormat: "F j, Y (H:i)",
+                        defaultHour: 0,
+                        defaultMinute: 0,
+                        allowInput: true,
+                        onClose: (selectedDates, dateStr) => {
+                            this.modal.deadline = dateStr;
+                        }
+                    });
+                },
+
                 openCreateModal(status) {
-                    this.modal = { open: true, status, title: '', description: '', category_id: '', deadline: '' }
+                    this.modal = {
+                        open: true,
+                        status,
+                        title: '',
+                        description: '',
+                        category_id: '',
+                        deadline: ''
+                    };
+
+                    this.$nextTick(() => this.initDatePicker());
                 },
 
                 openEditModal(activity) {
@@ -294,13 +341,16 @@
 
                 async createActivity() {
                     if (!this.modal.title.trim()) return
+
+                    let deadlineValue = this.modal.deadline || null;
+
                     try {
                         await axios.post(`${API_BASE}/activities`, {
                             user_id: USER_ID,
                             title: this.modal.title.trim(),
                             description: this.modal.description || null,
                             category_id: this.modal.category_id || null,
-                            deadline: this.modal.deadline || null,
+                            deadline: deadlineValue,
                             status: this.modal.status,
                         })
                         this.modal.open = false
@@ -336,8 +386,30 @@
                 },
 
                 formatDate(dt) {
-                    if (!dt) return ''
-                    return new Date(dt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+                    if (!dt) return '';
+
+                    const date = new Date(dt);
+                    if (isNaN(date.getTime())) return dt;
+
+                    const baseOptions = {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                    };
+
+                    const isDateOnly = date.getHours() === 0 &&
+                                       date.getMinutes() === 0 &&
+                                       date.getSeconds() === 0;
+
+                    if (isDateOnly) {
+                        return date.toLocaleDateString('en-US', baseOptions);
+                    }
+
+                    return date.toLocaleString('en-US', {
+                        ...baseOptions,
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
                 },
 
                 isOverdue(dt) {
