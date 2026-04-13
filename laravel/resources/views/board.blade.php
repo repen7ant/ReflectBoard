@@ -270,8 +270,13 @@
                 },
 
                 async loadCategories() {
-                    // TODO: GET /categories endpoint
-                    this.categories = []
+                    try {
+                        const res = await axios.get(`${API_BASE}/categories`)
+                        this.categories = res.data
+                    } catch (e) {
+                        this.showToast('Error loading categories')
+                        this.categories = []
+                    }
                 },
 
                 initSortable() {
