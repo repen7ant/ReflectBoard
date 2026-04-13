@@ -186,7 +186,7 @@ body {
     width: 1.25rem;
     height: 1.25rem;
     border-radius: 50%;
-    border: 2px solid var(--border);
+    border: 2px solid var(--accent-purple);
     background: transparent;
     cursor: pointer;
     transition: all 0.15s;
@@ -195,8 +195,7 @@ body {
 }
 
 .complete-circle:hover {
-    border-color: var(--accent-purple);
-    background: rgba(152, 187, 108, 0.2);
+    background: var(--accent-purple);
 }
 
 .card:hover {

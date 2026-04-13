@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -9,14 +9,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/board.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 <body x-data="board()" x-init="init()">
 
@@ -110,7 +108,7 @@
 
                 <div class="field">
                     <label>Description</label>
-                    <textarea x-model="modal.description" rows="2" placeholder="Details..."></textarea>
+                    <textarea x-model="modal.description" rows="2" placeholder="Details"></textarea>
                 </div>
 
                 <div class="field">
@@ -125,13 +123,10 @@
 
                 <div class="field">
                     <label>Deadline</label>
-                    <input
-                        type="text"
-                        id="deadline-picker"
-                        x-model="modal.deadline"
-                        placeholder="Select date..."
-                        readonly
-                    >
+                    <div style="display:flex;gap:0.5rem;">
+                        <input type="date" x-model="modal.deadlineDate" style="flex:1;">
+                        <input type="time" x-model="modal.deadlineTime" style="width:9rem;">
+                    </div>
                 </div>
 
                 <div class="modal-actions">
@@ -142,52 +137,51 @@
         </div>
     </template>
 
-    <!-- Modal: viewing activity -->
+    <!-- Modal: viewing/editing activity -->
     <template x-if="editModal.open">
         <div class="modal-overlay" @click.self="editModal.open = false">
             <div class="modal">
-                <div class="modal-header">
-                    <div class="modal-activity-title" x-text="editModal.activity?.title"></div>
-
-                    <div style="margin-left:auto; text-align:center;">
+                <div class="modal-header" style="display:flex; justify-content:center;">
+                    <div style="text-align:center;">
                         <div class="detail-label">Created</div>
                         <div class="detail-value" x-text="formatDate(editModal.activity?.created_at, true)"></div>
                     </div>
                 </div>
 
-                <template x-if="editModal.activity?.category">
-                    <div class="detail-row">
-                        <span class="detail-label">Category</span>
-                        <div style="display:flex;align-items:center;gap:0.375rem;">
-                            <div class="category-dot" :style="'background:' + editModal.activity.category.color"></div>
-                            <span class="detail-value" x-text="editModal.activity.category.name"></span>
-                        </div>
+                <div class="field">
+                    <label>Title</label>
+                    <input type="text" x-model="editModal.title">
+                </div>
+
+                <div class="field">
+                    <label>Description</label>
+                    <textarea x-model="editModal.description" rows="2"></textarea>
+                </div>
+
+                <div class="field">
+                    <label>Category</label>
+                    <select x-model="editModal.category_id">
+                        <option value="">— no category —</option>
+                        <template x-for="cat in categories" :key="cat.id">
+                            <option :value="cat.id" x-text="cat.name" :selected="cat.id == editModal.category_id"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Deadline</label>
+                    <div style="display:flex;gap:0.5rem;">
+                        <input type="date" x-model="editModal.deadlineDate" style="flex:1;">
+                        <input type="time" x-model="editModal.deadlineTime" style="width:9rem;">
                     </div>
-                </template>
+                </div>
 
-                <template x-if="editModal.activity?.deadline">
-                    <div class="detail-row">
-                        <span class="detail-label">Deadline</span>
-                        <span
-                            class="detail-value"
-                            :class="isOverdue(editModal.activity.deadline) ? 'overdue' : ''"
-                            x-text="formatDate(editModal.activity.deadline, true)"
-                        ></span>
-                    </div>
-                </template>
-
-                <template x-if="editModal.activity?.description">
-                    <div style="margin-top:1rem;">
-                        <div class="detail-label" style="margin-bottom:0.5rem;">Description</div>
-                        <div class="description-block" x-text="editModal.activity.description"></div>
-                    </div>
-                </template>
-
-                <div class="coming-soon">✏️ Editing coming soon</div>
-
-                <div class="modal-actions" style="justify-content:space-between;">
+                <div class="modal-actions" style="justify-content: space-between; margin-top: 1.5rem;">
                     <button class="btn btn-danger" @click="deleteActivity(editModal.activity)">Delete</button>
-                    <button class="btn btn-ghost" @click="editModal.open = false">Close</button>
+                    <div style="display:flex; gap:0.5rem;">
+                        <button class="btn btn-ghost" @click="editModal.open = false">Cancel</button>
+                        <button class="btn btn-primary" @click="saveActivity()">Save Changes</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -201,13 +195,8 @@
                 <div class="modal-activity-title" style="margin-bottom: 1.25rem;" x-text="completeModal.activity?.title"></div>
 
                 <div class="field">
-                    <label>Time Spent (minutes, optional)</label>
-                    <input
-                        type="number"
-                        x-model="completeModal.time_spent"
-                        placeholder="e.g. 45"
-                        min="0"
-                    >
+                    <label>Time spent in mins (optional)</label>
+                    <input type="number" x-model="completeModal.time_spent" placeholder="e.g. 45" min="0">
                 </div>
 
                 <div class="field">
@@ -262,32 +251,32 @@
                     title: '',
                     description: '',
                     category_id: '',
-                    deadline: '',
+                    deadlineDate: '',
+                    deadlineTime: '',
                 },
                 editModal: {
                     open: false,
                     activity: null,
+                    title: '',
+                    description: '',
+                    category_id: '',
+                    deadlineDate: '',
+                    deadlineTime: '',
+                    reflection_text: '',
+                    time_spent_minutes: '',
                 },
                 completeModal: {
-                            open: false,
-                            activity: null,
-                            reflection: '',
-                            time_spent: ''
-                        },
+                    open: false,
+                    activity: null,
+                    reflection: '',
+                    time_spent: '',
+                },
                 toast: { show: false, message: '' },
-                fp: null,
 
                 async init() {
                     await this.loadActivities()
                     await this.loadCategories()
-
-                    this.$nextTick(() => {
-                        this.initSortable()
-                    });
-
-                    window.addEventListener('clear-date', () => {
-                                    if (this.fp) this.fp.clear();
-                    });
+                    this.$nextTick(() => this.initSortable())
                 },
 
                 async loadActivities() {
@@ -313,7 +302,6 @@
                         const res = await axios.get(`${API_BASE}/categories`)
                         this.categories = res.data
                     } catch (e) {
-                        this.showToast('Error loading categories')
                         this.categories = []
                     }
                 },
@@ -333,7 +321,7 @@
                                 const newStatus = evt.to.dataset.status
                                 if (evt.from === evt.to) return
                                 try {
-                                    await axios.patch(`${API_BASE}/activities/${activityId}/status`, { status: newStatus })
+                                    await axios.patch(`${API_BASE}/activities/${activityId}`, { status: newStatus })
                                     await this.loadActivities()
                                 } catch (e) {
                                     this.showToast('Error moving activity')
@@ -344,28 +332,6 @@
                     })
                 },
 
-                initDatePicker() {
-                    const el = document.getElementById('deadline-picker');
-                    if (!el) return;
-
-                    if (this.fp) this.fp.destroy();
-
-                    this.fp = flatpickr(el, {
-                        enableTime: true,
-                        time_24hr: true,
-                        disableMobile: true,
-                        dateFormat: "Y-m-d H:i",
-                        altInput: true,
-                        altFormat: "F j, Y (H:i)",
-                        defaultHour: 0,
-                        defaultMinute: 0,
-                        allowInput: true,
-                        onClose: (selectedDates, dateStr) => {
-                            this.modal.deadline = dateStr;
-                        }
-                    });
-                },
-
                 openCreateModal(status) {
                     this.modal = {
                         open: true,
@@ -373,37 +339,53 @@
                         title: '',
                         description: '',
                         category_id: '',
-                        deadline: ''
-                    };
-
-                    this.$nextTick(() => this.initDatePicker());
+                        deadlineDate: '',
+                        deadlineTime: '',
+                    }
                 },
 
                 openEditModal(activity) {
-                    this.editModal = { open: true, activity }
+                    const dl = activity.deadline ? activity.deadline.split('T') : ['', '']
+                    const timeRaw = dl[1] ? dl[1].slice(0, 5) : ''
+                    const timeVal = (timeRaw === '00:00') ? '' : timeRaw
+
+                    this.editModal = {
+                        open: true,
+                        activity,
+                        title: activity.title,
+                        description: activity.description || '',
+                        category_id: activity.category_id || '',
+                        deadlineDate: dl[0] || '',
+                        deadlineTime: timeVal,
+                        reflection_text: activity.reflection_text || '',
+                        time_spent_minutes: activity.time_spent_minutes || '',
+                    }
                 },
 
                 openCompleteModal(activity) {
                     this.completeModal = {
                         open: true,
-                        activity: activity,
+                        activity,
                         reflection: '',
-                        time_spent: ''
+                        time_spent: '',
                     }
+                },
+
+                getDeadline(dateVal, timeVal) {
+                    if (!dateVal) return null
+                    if (!timeVal) return dateVal
+                    return `${dateVal}T${timeVal}:00`
                 },
 
                 async createActivity() {
                     if (!this.modal.title.trim()) return
-
-                    let deadlineValue = this.modal.deadline || null;
-
                     try {
                         await axios.post(`${API_BASE}/activities`, {
                             user_id: USER_ID,
                             title: this.modal.title.trim(),
                             description: this.modal.description || null,
                             category_id: this.modal.category_id || null,
-                            deadline: deadlineValue,
+                            deadline: this.getDeadline(this.modal.deadlineDate, this.modal.deadlineTime),
                             status: this.modal.status,
                         })
                         this.modal.open = false
@@ -414,23 +396,39 @@
                     }
                 },
 
-                async completeActivity() {
-                    if (!this.completeModal.activity) return;
-
-                    const activityId = this.completeModal.activity.id;
-
+                async saveActivity() {
+                    const id = this.editModal.activity.id
                     try {
-                        await axios.patch(`${API_BASE}/activities/${activityId}/status`, {
+                        await axios.patch(`${API_BASE}/activities/${id}`, {
+                            title: this.editModal.title,
+                            description: this.editModal.description || null,
+                            category_id: this.editModal.category_id || null,
+                            deadline: this.getDeadline(this.editModal.deadlineDate, this.editModal.deadlineTime),
+                            reflection_text: this.editModal.reflection_text || null,
+                            time_spent_minutes: this.editModal.time_spent_minutes ? parseInt(this.editModal.time_spent_minutes) : null,
+                        })
+                        this.editModal.open = false
+                        await this.loadActivities()
+                        this.showToast('Updated successfully')
+                    } catch (e) {
+                        this.showToast('Error updating activity')
+                    }
+                },
+
+                async completeActivity() {
+                    if (!this.completeModal.activity) return
+                    const activityId = this.completeModal.activity.id
+                    try {
+                        await axios.patch(`${API_BASE}/activities/${activityId}`, {
                             status: 'done',
                             reflection_text: this.completeModal.reflection || null,
-                            time_spent_minutes: parseInt(this.completeModal.time_spent) || null
-                        });
-
-                        this.completeModal.open = false;
-                        await this.loadActivities();
-                        this.showToast('Activity completed');
+                            time_spent_minutes: parseInt(this.completeModal.time_spent) || null,
+                        })
+                        this.completeModal.open = false
+                        await this.loadActivities()
+                        this.showToast('Activity completed')
                     } catch (e) {
-                        this.showToast('Error completing activity');
+                        this.showToast('Error completing activity')
                     }
                 },
 
@@ -453,37 +451,19 @@
                 statusLabel(status) {
                     const map = {
                         backlog: 'Backlog', today: 'Today',
-                        in_process: 'In Process', on_reflection: 'On Reflection',
+                        in_process: 'In Process', on_reflection: 'On Reflection', done: 'Done',
                     }
                     return map[status] ?? status
                 },
 
                 formatDate(dt, showYear = false) {
-                    if (!dt) return '';
-
-                    const date = new Date(dt);
-                    if (isNaN(date.getTime())) return dt;
-
-                    const baseOptions = {
-                        day: 'numeric',
-                        month: 'short',
-                        ...(showYear ? { year: 'numeric' } : {})
-                    };
-
-                    const isDateOnly =
-                        date.getHours() === 0 &&
-                        date.getMinutes() === 0 &&
-                        date.getSeconds() === 0;
-
-                    if (isDateOnly) {
-                        return date.toLocaleDateString('en-US', baseOptions);
-                    }
-
-                    return date.toLocaleString('en-US', {
-                        ...baseOptions,
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
+                    if (!dt) return ''
+                    const date = new Date(dt)
+                    if (isNaN(date.getTime())) return dt
+                    const baseOptions = { day: 'numeric', month: 'short', ...(showYear ? { year: 'numeric' } : {}) }
+                    const isDateOnly = dt.length === 10 || (date.getHours() === 0 && date.getMinutes() === 0 && date.getSeconds() === 0)
+                    if (isDateOnly) return date.toLocaleDateString('en-US', baseOptions)
+                    return date.toLocaleString('en-US', { ...baseOptions, hour: '2-digit', minute: '2-digit' })
                 },
 
                 isOverdue(dt) {
