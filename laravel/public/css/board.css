@@ -175,6 +175,28 @@ body {
     cursor: pointer;
     transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
     user-select: none;
+    position: relative;
+    padding-right: 2.5rem;
+}
+
+.complete-circle {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    padding: 0;
+    z-index: 2;
+}
+
+.complete-circle:hover {
+    border-color: var(--accent-purple);
+    background: rgba(152, 187, 108, 0.2);
 }
 
 .card:hover {

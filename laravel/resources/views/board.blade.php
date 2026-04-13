@@ -61,6 +61,11 @@
                         <template x-if="!loading">
                             <template x-for="activity in activities[col.status] ?? []" :key="activity.id">
                                 <div class="card" :data-id="activity.id" @click="openEditModal(activity)">
+                                    <button
+                                        class="complete-circle"
+                                        title="Complete"
+                                        @click.stop="openCompleteModal(activity)"
+                                    ></button>
                                     <div class="card-title" x-text="activity.title"></div>
 
                                     <template x-if="activity.category">
@@ -188,6 +193,44 @@
         </div>
     </template>
 
+    <!-- Modal: completing activity -->
+    <template x-if="completeModal.open">
+        <div class="modal-overlay" @click.self="completeModal.open = false">
+            <div class="modal">
+                <div class="modal-title">Complete Task</div>
+                <div class="modal-activity-title" style="margin-bottom: 1.25rem;" x-text="completeModal.activity?.title"></div>
+
+                <div class="field">
+                    <label>Time Spent (minutes, optional)</label>
+                    <input
+                        type="number"
+                        x-model="completeModal.time_spent"
+                        placeholder="e.g. 45"
+                        min="0"
+                    >
+                </div>
+
+                <div class="field">
+                    <label>Reflection (optional)</label>
+                    <textarea
+                        x-model="completeModal.reflection"
+                        rows="4"
+                        placeholder="What are your thoughts on this task? Any challenges?"
+                    ></textarea>
+                </div>
+
+                <div class="modal-actions" style="justify-content: space-between;">
+                    <button class="btn btn-ghost" @click="completeModal.open = false">Cancel</button>
+                    <button
+                        class="btn btn-primary"
+                        style="background: #98bb6c; color: var(--bg);"
+                        @click="completeActivity()"
+                    >Complete</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
     <!-- Toast -->
     <template x-if="toast.show">
         <div class="toast" x-text="toast.message"></div>
@@ -225,6 +268,12 @@
                     open: false,
                     activity: null,
                 },
+                completeModal: {
+                            open: false,
+                            activity: null,
+                            reflection: '',
+                            time_spent: ''
+                        },
                 toast: { show: false, message: '' },
                 fp: null,
 
@@ -334,6 +383,15 @@
                     this.editModal = { open: true, activity }
                 },
 
+                openCompleteModal(activity) {
+                    this.completeModal = {
+                        open: true,
+                        activity: activity,
+                        reflection: '',
+                        time_spent: ''
+                    }
+                },
+
                 async createActivity() {
                     if (!this.modal.title.trim()) return
 
@@ -353,6 +411,26 @@
                         this.showToast('Activity created')
                     } catch (e) {
                         this.showToast('Error creating activity')
+                    }
+                },
+
+                async completeActivity() {
+                    if (!this.completeModal.activity) return;
+
+                    const activityId = this.completeModal.activity.id;
+
+                    try {
+                        await axios.patch(`${API_BASE}/activities/${activityId}/status`, {
+                            status: 'done',
+                            reflection_text: this.completeModal.reflection || null,
+                            time_spent_minutes: parseInt(this.completeModal.time_spent) || null
+                        });
+
+                        this.completeModal.open = false;
+                        await this.loadActivities();
+                        this.showToast('Activity completed');
+                    } catch (e) {
+                        this.showToast('Error completing activity');
                     }
                 },
 
