@@ -74,7 +74,7 @@
                                         <div
                                             class="card-deadline"
                                             :class="isOverdue(activity.deadline) ? 'overdue' : ''"
-                                            x-text="formatDate(activity.deadline)"
+                                            x-text="formatDate(activity.deadline, false)"
                                         ></div>
                                     </template>
                                 </div>
@@ -142,15 +142,12 @@
         <div class="modal-overlay" @click.self="editModal.open = false">
             <div class="modal">
                 <div class="modal-header">
-                    <div>
-                        <div class="modal-title" style="margin-bottom:0.25rem;">Activity</div>
-                        <div class="modal-activity-title" x-text="editModal.activity?.title"></div>
-                    </div>
-                    <button class="close-btn" @click="editModal.open = false">✕</button>
-                </div>
+                    <div class="modal-activity-title" x-text="editModal.activity?.title"></div>
 
-                <div style="margin-bottom:1rem;">
-                    <span class="status-badge" :class="'status-' + editModal.activity?.status" x-text="statusLabel(editModal.activity?.status)"></span>
+                    <div style="margin-left:auto; text-align:center;">
+                        <div class="detail-label">Created</div>
+                        <div class="detail-value" x-text="formatDate(editModal.activity?.created_at, true)"></div>
+                    </div>
                 </div>
 
                 <template x-if="editModal.activity?.category">
@@ -169,15 +166,8 @@
                         <span
                             class="detail-value"
                             :class="isOverdue(editModal.activity.deadline) ? 'overdue' : ''"
-                            x-text="formatDate(editModal.activity.deadline)"
+                            x-text="formatDate(editModal.activity.deadline, true)"
                         ></span>
-                    </div>
-                </template>
-
-                <template x-if="editModal.activity?.created_at">
-                    <div class="detail-row">
-                        <span class="detail-label">Created</span>
-                        <span class="detail-value" x-text="formatDate(editModal.activity.created_at)"></span>
                     </div>
                 </template>
 
@@ -385,12 +375,12 @@
                 statusLabel(status) {
                     const map = {
                         backlog: 'Backlog', today: 'Today',
-                        in_process: 'In Process', on_reflection: 'On Reflection', done: 'Done',
+                        in_process: 'In Process', on_reflection: 'On Reflection',
                     }
                     return map[status] ?? status
                 },
 
-                formatDate(dt) {
+                formatDate(dt, showYear = false) {
                     if (!dt) return '';
 
                     const date = new Date(dt);
@@ -399,12 +389,13 @@
                     const baseOptions = {
                         day: 'numeric',
                         month: 'short',
-                        year: 'numeric'
+                        ...(showYear ? { year: 'numeric' } : {})
                     };
 
-                    const isDateOnly = date.getHours() === 0 &&
-                                       date.getMinutes() === 0 &&
-                                       date.getSeconds() === 0;
+                    const isDateOnly =
+                        date.getHours() === 0 &&
+                        date.getMinutes() === 0 &&
+                        date.getSeconds() === 0;
 
                     if (isDateOnly) {
                         return date.toLocaleDateString('en-US', baseOptions);
