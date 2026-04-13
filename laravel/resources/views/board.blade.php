@@ -11,26 +11,30 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/board.css">
-
 </head>
 <body x-data="board()" x-init="init()">
 
+    <!-- Topbar -->
     <nav class="topbar">
-        <span class="logo">ReflectBoard</span>
-        <a href="/board" class="nav-link active">Board</a>
-        <a href="/done" class="nav-link">Done</a>
-        <a href="/analytics" class="nav-link">Analytics</a>
-        <div style="margin-left: auto; display: flex; align-items: center; gap: 16px;">
-            <span style="font-size: 16px; color: var(--text-muted);">user@test.com</span>
+        <div style="margin-right: auto;">
+            <a href="/">
+                <img src="/icon.svg" alt="ReflectBoard" class="logo-icon">
+            </a>
+        </div>
+        <div class="nav-links">
+            <a href="/board" class="nav-link active">Board</a>
+            <a href="/done" class="nav-link">Done</a>
+            <a href="/analytics" class="nav-link">Analytics</a>
         </div>
     </nav>
 
-    <div style="padding: 24px; overflow-x: auto;">
-        <div style="display: flex; gap: 16px; align-items: flex-start; min-width: max-content;">
-
+    <!-- Board -->
+    <div class="board-wrapper">
+        <div class="board-inner">
             <template x-for="col in columns" :key="col.status">
                 <div class="column">
                     <div class="column-header">
@@ -43,7 +47,7 @@
                         :data-status="col.status"
                     >
                         <template x-if="loading">
-                            <div style="display: flex; justify-content: center; padding: 24px;">
+                            <div style="display:flex;justify-content:center;padding:1.5rem;">
                                 <div class="spinner"></div>
                             </div>
                         </template>
@@ -54,14 +58,7 @@
 
                         <template x-if="!loading">
                             <template x-for="activity in activities[col.status] ?? []" :key="activity.id">
-                                <div
-                                    class="card"
-                                    :data-id="activity.id"
-                                >
-                                    <div class="card-actions">
-                                        <button class="card-btn danger" @click.stop="deleteActivity(activity)" title="Delete">✕</button>
-                                    </div>
-
+                                <div class="card" :data-id="activity.id" @click="openEditModal(activity)">
                                     <div class="card-title" x-text="activity.title"></div>
 
                                     <template x-if="activity.category">
@@ -83,15 +80,17 @@
                         </template>
                     </div>
 
-                    <div style="padding: 0 10px 10px;">
-                        <button class="add-btn" @click="openModal(col.status)">+ add</button>
-                    </div>
+                    <template x-if="col.status !== 'on_reflection'">
+                        <div style="padding: 0 0.625rem 0.625rem;">
+                            <button class="add-btn" @click.stop="openCreateModal(col.status)">+ add</button>
+                        </div>
+                    </template>
                 </div>
             </template>
-
         </div>
     </div>
 
+    <!-- Modal: creating activity -->
     <template x-if="modal.open">
         <div class="modal-overlay" @click.self="modal.open = false">
             <div class="modal">
@@ -130,13 +129,75 @@
         </div>
     </template>
 
+    <!-- Modal: viewing activity -->
+    <template x-if="editModal.open">
+        <div class="modal-overlay" @click.self="editModal.open = false">
+            <div class="modal">
+                <div class="modal-header">
+                    <div>
+                        <div class="modal-title" style="margin-bottom:0.25rem;">Activity</div>
+                        <div class="modal-activity-title" x-text="editModal.activity?.title"></div>
+                    </div>
+                    <button class="close-btn" @click="editModal.open = false">✕</button>
+                </div>
+
+                <div style="margin-bottom:1rem;">
+                    <span class="status-badge" :class="'status-' + editModal.activity?.status" x-text="statusLabel(editModal.activity?.status)"></span>
+                </div>
+
+                <template x-if="editModal.activity?.category">
+                    <div class="detail-row">
+                        <span class="detail-label">Category</span>
+                        <div style="display:flex;align-items:center;gap:0.375rem;">
+                            <div class="category-dot" :style="'background:' + editModal.activity.category.color"></div>
+                            <span class="detail-value" x-text="editModal.activity.category.name"></span>
+                        </div>
+                    </div>
+                </template>
+
+                <template x-if="editModal.activity?.deadline">
+                    <div class="detail-row">
+                        <span class="detail-label">Deadline</span>
+                        <span
+                            class="detail-value"
+                            :class="isOverdue(editModal.activity.deadline) ? 'overdue' : ''"
+                            x-text="formatDate(editModal.activity.deadline)"
+                        ></span>
+                    </div>
+                </template>
+
+                <template x-if="editModal.activity?.created_at">
+                    <div class="detail-row">
+                        <span class="detail-label">Created</span>
+                        <span class="detail-value" x-text="formatDate(editModal.activity.created_at)"></span>
+                    </div>
+                </template>
+
+                <template x-if="editModal.activity?.description">
+                    <div style="margin-top:1rem;">
+                        <div class="detail-label" style="margin-bottom:0.5rem;">Description</div>
+                        <div class="description-block" x-text="editModal.activity.description"></div>
+                    </div>
+                </template>
+
+                <div class="coming-soon">✏️ Editing coming soon</div>
+
+                <div class="modal-actions" style="justify-content:space-between;">
+                    <button class="btn btn-danger" @click="deleteActivity(editModal.activity)">Delete</button>
+                    <button class="btn btn-ghost" @click="editModal.open = false">Close</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Toast -->
     <template x-if="toast.show">
         <div class="toast" x-text="toast.message"></div>
     </template>
 
     <script>
         const API_BASE = '{{ config("services.api_base.url") }}'
-        const USER_ID = 1 // TODO: replace with ID from JWT
+        const USER_ID = 1 // TODO: replace with ID from JWT in sprint #3
 
         function board() {
             return {
@@ -162,8 +223,11 @@
                     category_id: '',
                     deadline: '',
                 },
+                editModal: {
+                    open: false,
+                    activity: null,
+                },
                 toast: { show: false, message: '' },
-                sortables: [],
 
                 async init() {
                     await this.loadActivities()
@@ -176,11 +240,7 @@
                     try {
                         const res = await axios.get(`${API_BASE}/activities`)
                         const all = res.data
-
-                        // Reset
                         Object.keys(this.activities).forEach(k => this.activities[k] = [])
-
-                        // Distribute to columns
                         all.forEach(a => {
                             if (this.activities[a.status] !== undefined) {
                                 this.activities[a.status].push(a)
@@ -194,7 +254,7 @@
                 },
 
                 async loadCategories() {
-                    // TODO: add GET /categories endpoint in FastAPI
+                    // TODO: GET /categories endpoint
                     this.categories = []
                 },
 
@@ -202,25 +262,18 @@
                     this.columns.forEach(col => {
                         const el = document.getElementById('col-' + col.status)
                         if (!el) return
-
                         Sortable.create(el, {
                             group: 'board',
                             animation: 150,
                             ghostClass: 'sortable-ghost',
                             chosenClass: 'sortable-chosen',
-                            filter: '.add-btn',
                             draggable: '.card',
                             onEnd: async (evt) => {
                                 const activityId = parseInt(evt.item.dataset.id)
                                 const newStatus = evt.to.dataset.status
-
                                 if (evt.from === evt.to) return
-
                                 try {
-                                    await axios.patch(`${API_BASE}/activities/${activityId}/status`, {
-                                        status: newStatus
-                                    })
-
+                                    await axios.patch(`${API_BASE}/activities/${activityId}/status`, { status: newStatus })
                                     await this.loadActivities()
                                 } catch (e) {
                                     this.showToast('Error moving activity')
@@ -231,20 +284,16 @@
                     })
                 },
 
-                openModal(status) {
-                    this.modal = {
-                        open: true,
-                        status,
-                        title: '',
-                        description: '',
-                        category_id: '',
-                        deadline: '',
-                    }
+                openCreateModal(status) {
+                    this.modal = { open: true, status, title: '', description: '', category_id: '', deadline: '' }
+                },
+
+                openEditModal(activity) {
+                    this.editModal = { open: true, activity }
                 },
 
                 async createActivity() {
                     if (!this.modal.title.trim()) return
-
                     try {
                         await axios.post(`${API_BASE}/activities`, {
                             user_id: USER_ID,
@@ -254,7 +303,6 @@
                             deadline: this.modal.deadline || null,
                             status: this.modal.status,
                         })
-
                         this.modal.open = false
                         await this.loadActivities()
                         this.showToast('Activity created')
@@ -265,9 +313,9 @@
 
                 async deleteActivity(activity) {
                     if (!confirm(`Delete "${activity.title}"?`)) return
-
                     try {
                         await axios.delete(`${API_BASE}/activities/${activity.id}`)
+                        this.editModal.open = false
                         await this.loadActivities()
                         this.showToast('Activity deleted')
                     } catch (e) {
@@ -279,9 +327,17 @@
                     return this.columns.find(c => c.status === status)?.label ?? status
                 },
 
+                statusLabel(status) {
+                    const map = {
+                        backlog: 'Backlog', today: 'Today',
+                        in_process: 'In Process', on_reflection: 'On Reflection', done: 'Done',
+                    }
+                    return map[status] ?? status
+                },
+
                 formatDate(dt) {
                     if (!dt) return ''
-                    return new Date(dt).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+                    return new Date(dt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
                 },
 
                 isOverdue(dt) {
