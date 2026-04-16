@@ -3,7 +3,7 @@ from app.schemas.category import CategoryCreate, CategoryOut
 from app.services.category_service import CategoryService
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(prefix="/api/v1")
 
@@ -21,3 +21,14 @@ async def create_category(
     db: AsyncSession = Depends(get_db),
 ):
     return await CategoryService.create_category(db, category)
+
+
+@router.delete("/categories/{category_id}", status_code=204)
+async def delete_category(
+    category_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    deleted = await CategoryService.delete_category(db, category_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Category not found or not yours")
+    return None

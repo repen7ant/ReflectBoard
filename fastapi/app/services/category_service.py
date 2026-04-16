@@ -22,3 +22,18 @@ class CategoryService:
         await db.commit()
         await db.refresh(category)
         return category
+
+    @staticmethod
+    async def delete_category(db: AsyncSession, category_id: int) -> bool:
+        result = await db.execute(
+            select(Category).where(
+                Category.id == category_id,
+            )
+        )
+        category = result.scalar_one_or_none()
+        if not category:
+            return False
+
+        await db.delete(category)
+        await db.commit()
+        return True
