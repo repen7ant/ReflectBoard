@@ -119,6 +119,13 @@
                             <option :value="cat.id" x-text="cat.name"></option>
                         </template>
                     </select>
+                    <button
+                        type="button"
+                        @click="openCreateCategoryModal()"
+                        class="btn btn-ghost"
+                        style="margin-top: 0.5rem; width: 100%; font-size: 0.875rem; justify-content: center;">
+                        + New category
+                    </button>
                 </div>
 
                 <div class="field">
@@ -220,6 +227,30 @@
         </div>
     </template>
 
+    <!-- Modal: creating new category -->
+    <template x-if="categoryModal.open">
+        <div class="modal-overlay" @click.self="categoryModal.open = false">
+            <div class="modal" style="max-width: 26rem;">
+                <div class="modal-title">New Category</div>
+
+                <div class="field">
+                    <label>Name *</label>
+                    <input type="text" x-model="categoryModal.name" placeholder="e.g. Work, Health, Study" @keydown.enter="createNewCategory()">
+                </div>
+
+                <div class="field">
+                    <label>Color</label>
+                    <input type="color" x-model="categoryModal.color" style="height: 2.75rem; width: 100%; padding: 0.25rem; border: 1px solid var(--border); border-radius: 0.375rem;">
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn btn-ghost" @click="categoryModal.open = false">Cancel</button>
+                    <button class="btn btn-primary" @click="createNewCategory()" :disabled="!categoryModal.name.trim()">Create Category</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
     <!-- Toast -->
     <template x-if="toast.show">
         <div class="toast" x-text="toast.message"></div>
@@ -270,6 +301,11 @@
                     activity: null,
                     reflection: '',
                     time_spent: '',
+                },
+                categoryModal: {
+                    open: false,
+                    name: '',
+                    color: '#957fb8',
                 },
                 toast: { show: false, message: '' },
 
@@ -368,6 +404,33 @@
                         activity,
                         reflection: '',
                         time_spent: '',
+                    }
+                },
+
+                openCreateCategoryModal() {
+                    this.categoryModal = {
+                        open: true,
+                        name: '',
+                        color: '#957fb8',
+                    }
+                },
+
+                async createNewCategory() {
+                    if (!this.categoryModal.name.trim()) return
+
+                    try {
+                        const res = await axios.post(`${API_BASE}/categories`, {
+                            name: this.categoryModal.name.trim(),
+                            color: this.categoryModal.color,
+                            user_id : USER_ID,
+                        })
+
+                        this.categories.push(res.data)
+
+                        this.categoryModal.open = false
+                        this.showToast('Category created')
+                    } catch (e) {
+                        this.showToast('Error creating category')
                     }
                 },
 
