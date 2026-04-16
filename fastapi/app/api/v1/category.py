@@ -1,5 +1,5 @@
 from app.db.session import get_db
-from app.schemas.activity import CategoryOut
+from app.schemas.category import CategoryCreate, CategoryOut
 from app.services.category_service import CategoryService
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,3 +13,11 @@ async def get_categories(
     db: AsyncSession = Depends(get_db),
 ):
     return await CategoryService.get_categories(db)
+
+
+@router.post("/categories", response_model=CategoryOut)
+async def create_category(
+    category: CategoryCreate,
+    db: AsyncSession = Depends(get_db),
+):
+    return await CategoryService.create_category(db, category)
