@@ -113,17 +113,25 @@
 
                 <div class="field">
                     <label>Category</label>
-                    <select x-model="modal.category_id">
-                        <option value="">— no category —</option>
+                    <div class="category-grid">
                         <template x-for="cat in categories" :key="cat.id">
-                            <option :value="cat.id" x-text="cat.name"></option>
+                            <button
+                                type="button"
+                                @click="selectCategory(cat.id)"
+                                :class="{ 'selected': modal.category_id == cat.id }"
+                                class="category-btn"
+                            >
+                                <div class="category-dot" :style="'background:' + cat.color"></div>
+                                <span class="flex-1 text-left" x-text="cat.name"></span>
+                                <span @click.stop="deleteCategory(cat.id)" class="delete-x">×</span>
+                            </button>
                         </template>
-                    </select>
+                    </div>
                     <button
                         type="button"
                         @click="openCreateCategoryModal()"
                         class="btn btn-ghost"
-                        style="margin-top: 0.5rem; width: 100%; font-size: 0.875rem; justify-content: center;">
+                        style="width: 100%; font-size: 0.875rem; justify-content: center;">
                         + New category
                     </button>
                 </div>
@@ -167,12 +175,28 @@
 
                 <div class="field">
                     <label>Category</label>
-                    <select x-model="editModal.category_id">
-                        <option value="">— no category —</option>
+                    <div class="category-grid">
                         <template x-for="cat in categories" :key="cat.id">
-                            <option :value="cat.id" x-text="cat.name" :selected="cat.id == editModal.category_id"></option>
+                            <button
+                                type="button"
+                                @click="selectCategory(cat.id, true)"
+                                :class="{ 'selected': editModal.category_id == cat.id }"
+                                class="category-btn"
+                            >
+                                <div class="category-dot" :style="'background:' + cat.color"></div>
+                                <span class="flex-1 text-left" x-text="cat.name"></span>
+                                <span @click.stop="deleteCategory(cat.id)" class="delete-x">×</span>
+                            </button>
                         </template>
-                    </select>
+                    </div>
+
+    <button
+        type="button"
+        @click="openCreateCategoryModal()"
+        class="btn btn-ghost"
+        style="width: 100%; font-size: 0.875rem; justify-content: center;">
+        + New category
+    </button>
                 </div>
 
                 <div class="field">
@@ -404,6 +428,34 @@
                         activity,
                         reflection: '',
                         time_spent: '',
+                    }
+                },
+
+                selectCategory(id, isEdit = false) {
+                    if (isEdit) {
+                        this.editModal.category_id = id
+                    } else {
+                        this.modal.category_id = id
+                    }
+                },
+
+                async deleteCategory(categoryId) {
+                    if (!confirm('Delete this category? It will be removed from all tasks.')) return
+
+                    try {
+                        await axios.delete(`${API_BASE}/categories/${categoryId}`, {
+                            params: { user_id: USER_ID }
+                        })
+
+                        this.categories = this.categories.filter(c => c.id !== categoryId)
+
+                        if (this.modal.category_id == categoryId) this.modal.category_id = ''
+                        if (this.editModal.category_id == categoryId) this.editModal.category_id = ''
+
+                        this.showToast('Category deleted')
+                    } catch (e) {
+                        console.error(e)
+                        this.showToast('Error deleting category')
                     }
                 },
 
