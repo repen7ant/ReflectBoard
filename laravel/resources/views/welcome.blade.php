@@ -23,9 +23,16 @@
                 </span>
             </div>
 
-            <div style="display: flex; gap: 1rem; margin-left: auto;">
+            <div style="display: flex; gap: 0.75rem; margin-left: auto; align-items: center;">
                 @auth
                     <a href="{{ route('board') }}" class="btn btn-primary" style="text-decoration: none;">Board</a>
+
+                    <form method="POST" action="{{ route('logout') }}" style="margin: 0; display: flex;">
+                        @csrf
+                        <button type="submit" class="btn btn-ghost" style="font-size: 0.875rem;">
+                            Log out
+                        </button>
+                    </form>
                 @else
                     <a href="{{ route('login') }}" class="btn btn-ghost" style="text-decoration: none;">Log in</a>
                 @endauth
