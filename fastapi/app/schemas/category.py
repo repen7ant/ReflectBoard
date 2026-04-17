@@ -10,6 +10,5 @@ class CategoryOut(BaseModel):
 
 
 class CategoryCreate(BaseModel):
-    user_id: int
     name: str
     color: str

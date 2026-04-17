@@ -40,7 +40,6 @@ class ActivityUpdate(BaseModel):
 
 
 class ActivityCreate(BaseModel):
-    user_id: int
     category_id: int | None = None
     parent_id: int | None = None
     title: str
