@@ -20,7 +20,10 @@ class User(Base):
     email: Mapped[str] = mapped_column(
         String(255), unique=True, index=True, nullable=False
     )
-    password: Mapped[str] = mapped_column(String(255), nullable=False)
+    password: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    github_id: Mapped[str | None] = mapped_column(
+        String(255), unique=True, nullable=True
+    )
     email_verified_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     remember_token: Mapped[str | None] = mapped_column(String(100), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
