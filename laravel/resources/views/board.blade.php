@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="api-token" content="{{ auth()->check() ? 'stub-token' : '' }}">
+    <meta name="api-token" content="{{ auth()->check() ? auth()->user()->api_token : '' }}">
     <title>ReflectBoard</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -282,8 +282,10 @@
     </template>
 
     <script>
+        const apiToken = document.querySelector('meta[name="api-token"]').content;
+            axios.defaults.headers.common['Authorization'] = `Bearer ${apiToken}`;
+
         const API_BASE = '{{ config("services.api_base.url") }}'
-        const USER_ID = 1 // TODO: replace with ID from JWT in sprint #3
 
         function board() {
             return {
@@ -335,6 +337,10 @@
                 toast: { show: false, message: '' },
 
                 async init() {
+                    if (!apiToken) {
+                        window.location.href = '/login';
+                        return;
+                    }
                     await this.loadActivities()
                     await this.loadCategories()
                     this.$nextTick(() => this.initSortable())
@@ -444,9 +450,7 @@
                     if (!confirm('Delete this category? It will be removed from all tasks.')) return
 
                     try {
-                        await axios.delete(`${API_BASE}/categories/${categoryId}`, {
-                            params: { user_id: USER_ID }
-                        })
+                        await axios.delete(`${API_BASE}/categories/${categoryId}`)
 
                         this.categories = this.categories.filter(c => c.id !== categoryId)
 
@@ -469,21 +473,17 @@
                 },
 
                 async createNewCategory() {
-                    if (!this.categoryModal.name.trim()) return
-
+                    if (!this.categoryModal.name.trim()) return;
                     try {
                         const res = await axios.post(`${API_BASE}/categories`, {
                             name: this.categoryModal.name.trim(),
                             color: this.categoryModal.color,
-                            user_id : USER_ID,
-                        })
-
-                        this.categories.push(res.data)
-
-                        this.categoryModal.open = false
-                        this.showToast('Category created')
+                        });
+                        this.categories.push(res.data);
+                        this.categoryModal.open = false;
+                        this.showToast('Category created');
                     } catch (e) {
-                        this.showToast('Error creating category')
+                        this.showToast('Error creating category');
                     }
                 },
 
@@ -494,21 +494,20 @@
                 },
 
                 async createActivity() {
-                    if (!this.modal.title.trim()) return
+                    if (!this.modal.title.trim()) return;
                     try {
                         await axios.post(`${API_BASE}/activities`, {
-                            user_id: USER_ID,
                             title: this.modal.title.trim(),
                             description: this.modal.description || null,
                             category_id: this.modal.category_id || null,
                             deadline: this.getDeadline(this.modal.deadlineDate, this.modal.deadlineTime),
                             status: this.modal.status,
-                        })
-                        this.modal.open = false
-                        await this.loadActivities()
-                        this.showToast('Activity created')
+                        });
+                        this.modal.open = false;
+                        await this.loadActivities();
+                        this.showToast('Activity created');
                     } catch (e) {
-                        this.showToast('Error creating activity')
+                        this.showToast('Error creating activity');
                     }
                 },
 
