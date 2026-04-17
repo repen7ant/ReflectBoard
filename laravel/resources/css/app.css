@@ -1,3 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'variables.css';
+@import 'layout.css';
+@import 'components.css';
+@import 'auth.css';

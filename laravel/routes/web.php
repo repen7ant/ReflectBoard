@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
+use App\Http\Controllers\Auth\GitHubController;
 
 Route::get('/', function () {
     return view('welcome');
