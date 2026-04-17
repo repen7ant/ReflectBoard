@@ -1,10 +1,15 @@
+from __future__ import annotations
+
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from app.db.session import Base
-from app.models.activity import Activity
-from app.models.category import User
 from sqlalchemy import DateTime, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+if TYPE_CHECKING:
+    from app.models.activity import Activity
+    from app.models.user import User
 
 
 class Category(Base):

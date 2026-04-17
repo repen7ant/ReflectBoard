@@ -63,7 +63,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./laravel:/var/www/html
-    command: sh -c "composer install --no-interaction && chown -R www-data:www-data storage bootstrap/cache && chmod -R 775 storage bootstrap/cache && php-fpm"
+    command: sh -c "composer install --no-interaction && php artisan migrate --force && chown -R www-data:www-data storage bootstrap/cache && chmod -R 775 storage bootstrap/cache && php-fpm"
     env_file: ./laravel/.env
     depends_on:
       db:
@@ -84,17 +84,6 @@ services:
     depends_on:
       - fastapi
       - laravel
-
-  # docker compose run --rm migrate (только вручную)
-  migrate:
-    build: ./fastapi
-    env_file: ./fastapi/.env
-    command: uv run alembic upgrade head
-    depends_on:
-      db:
-        condition: service_healthy
-    profiles:
-      - tools
 
 volumes:
   mysql_data:

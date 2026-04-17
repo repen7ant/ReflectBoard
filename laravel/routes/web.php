@@ -19,8 +19,9 @@ Route::get('/health/db', function () {
     return response()->json(['status' => 'ok', 'result' => $result]);
 });
 
+Route::get('/board', fn() => view('board'))->name('board');
+
 Route::middleware('auth')->group(function () {
-    Route::get('/board', fn() => view('board'))->name('board');
     Route::get('/done', fn() => view('done'))->name('done');
     Route::get('/analytics', fn() => view('analytics'))->name('analytics');
 });

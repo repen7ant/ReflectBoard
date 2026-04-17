@@ -33,7 +33,8 @@ return new class extends Migration
             $table->json('tags')->nullable();
             $table->timestamp('completed_at')->nullable();
 
-            $table->timestamps();
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
 
             $table->index(['user_id', 'status']);
             $table->index(['user_id', 'parent_id']);

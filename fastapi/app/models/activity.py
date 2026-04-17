@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 import enum
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from app.db.session import Base
-from app.models.activity import User
-from app.models.category import Category
 from sqlalchemy import (
     JSON,
     Boolean,
@@ -16,6 +17,10 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+if TYPE_CHECKING:
+    from app.models.category import Category
+    from app.models.user import User
 
 
 class Status(str, enum.Enum):
