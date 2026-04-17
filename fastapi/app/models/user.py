@@ -33,3 +33,6 @@ class User(Base):
 
     categories: Mapped[list["Category"]] = relationship(back_populates="user")
     activities: Mapped[list["Activity"]] = relationship(back_populates="user")
+    api_token: Mapped[str | None] = mapped_column(
+        String(80), unique=True, nullable=True
+    )
