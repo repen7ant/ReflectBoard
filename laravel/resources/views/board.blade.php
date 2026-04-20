@@ -73,15 +73,13 @@
                                             <span x-text="activity.category.name"></span>
                                         </div>
                                     </template>
-                                    <template x-if="activity.tags && activity.tags.length > 0">
-                                        <div style="display: flex; gap: 0.25rem; flex-wrap: wrap; margin-top: 0.25rem;">
-                                            <template x-for="tag in activity.tags" :key="tag">
-                                                <span style="font-size: 0.7rem; color: #957fb8; background: rgba(149, 127, 184, 0.1); padding: 0.1rem 0.4rem; border-radius: 0.25rem;">
-                                                    #<span x-text="tag"></span>
-                                                </span>
-                                            </template>
-                                        </div>
-                                    </template>
+                                    <div x-show="activity.tags && activity.tags.length > 0" style="display: flex; gap: 0.25rem; flex-wrap: wrap; margin-top: 0.25rem;">
+                                        <template x-for="tag in (activity.tags || [])" :key="tag">
+                                            <span style="font-size: 0.7rem; color: #957fb8; background: rgba(149, 127, 184, 0.1); padding: 0.1rem 0.4rem; border-radius: 0.25rem;">
+                                                #<span x-text="tag"></span>
+                                            </span>
+                                        </template>
+                                    </div>
                                     <template x-if="activity.deadline">
                                         <div
                                             class="card-deadline"
@@ -245,7 +243,7 @@
                         <input
                             type="text"
                             x-model="newTag"
-                            :placeholder="modal.tags.length === 0 ? 'Add tag & press space...' : ''"
+                            :placeholder="editModal.tags.length === 0 ? 'Add tag & press space...' : ''"
                             @keydown.space.prevent="if(newTag.trim()){ editModal.tags.push(newTag.replace(/^#/, '').trim()); newTag = ''; }"
                             @keydown.enter.prevent="if(newTag.trim()){ editModal.tags.push(newTag.replace(/^#/, '').trim()); newTag = ''; }"
                             @keydown.backspace="if(newTag === '' && editModal.tags.length > 0){ editModal.tags.pop(); }"
@@ -507,10 +505,25 @@
                             ghostClass: 'sortable-ghost',
                             chosenClass: 'sortable-chosen',
                             draggable: '.card',
+
+                            onChoose: (evt) => {
+                                evt.item.setAttribute('x-ignore', '');
+                            },
+                            onUnchoose: (evt) => {
+                                evt.item.removeAttribute('x-ignore');
+                            },
+
                             onEnd: async (evt) => {
                                 const activityId = parseInt(evt.item.dataset.id);
                                 const newStatus = evt.to.dataset.status;
+
+                                evt.item.remove();
+                                if (evt.oldIndex !== undefined) {
+                                    evt.from.insertBefore(evt.item, evt.from.children[evt.oldIndex]);
+                                }
+
                                 if (evt.from === evt.to) return;
+
                                 try {
                                     await axios.patch(`${API_BASE}/activities/${activityId}`, { status: newStatus }, this.getAuthConfig());
                                     await this.loadActivities();
