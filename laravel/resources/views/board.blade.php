@@ -159,7 +159,7 @@
                         <input
                             type="text"
                             x-model="newTag"
-                            placeholder="Add tag & press space..."
+                            :placeholder="modal.tags.length === 0 ? 'Add tag & press space...' : ''"
                             @keydown.space.prevent="if(newTag.trim()){ modal.tags.push(newTag.replace(/^#/, '').trim()); newTag = ''; }"
                             @keydown.enter.prevent="if(newTag.trim()){ modal.tags.push(newTag.replace(/^#/, '').trim()); newTag = ''; }"
                             @keydown.backspace="if(newTag === '' && modal.tags.length > 0){ modal.tags.pop(); }"
@@ -222,13 +222,13 @@
                         </template>
                     </div>
 
-    <button
-        type="button"
-        @click="openCreateCategoryModal()"
-        class="btn btn-ghost"
-        style="width: 100%; font-size: 0.875rem; justify-content: center;">
-        + New category
-    </button>
+                    <button
+                        type="button"
+                        @click="openCreateCategoryModal()"
+                        class="btn btn-ghost"
+                        style="width: 100%; font-size: 0.875rem; justify-content: center;">
+                        + New category
+                    </button>
                 </div>
 
                 <div class="field" x-data="{ newTag: '' }">
@@ -245,7 +245,7 @@
                         <input
                             type="text"
                             x-model="newTag"
-                            placeholder="Add tag & press space..."
+                            :placeholder="modal.tags.length === 0 ? 'Add tag & press space...' : ''"
                             @keydown.space.prevent="if(newTag.trim()){ editModal.tags.push(newTag.replace(/^#/, '').trim()); newTag = ''; }"
                             @keydown.enter.prevent="if(newTag.trim()){ editModal.tags.push(newTag.replace(/^#/, '').trim()); newTag = ''; }"
                             @keydown.backspace="if(newTag === '' && editModal.tags.length > 0){ editModal.tags.pop(); }"
