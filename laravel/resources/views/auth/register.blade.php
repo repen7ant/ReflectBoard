@@ -27,12 +27,6 @@
             <form method="POST" action="{{ route('register') }}">
                 @csrf
                 <div class="field">
-                    <label for="name">Name</label>
-                    <input id="name" type="text" name="name" value="{{ old('name') }}" required autofocus>
-                    <x-input-error :messages="$errors->get('name')" style="color: var(--danger); font-size: 0.75rem; margin-top: 0.25rem;" />
-                </div>
-
-                <div class="field">
                     <label for="email">Email</label>
                     <input id="email" type="email" name="email" value="{{ old('email') }}" required>
                     <x-input-error :messages="$errors->get('email')" style="color: var(--danger); font-size: 0.75rem; margin-top: 0.25rem;" />

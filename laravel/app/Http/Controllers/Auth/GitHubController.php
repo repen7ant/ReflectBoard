@@ -22,7 +22,6 @@ class GitHubController extends Controller
         $user = User::updateOrCreate([
             'email' => $githubUser->email,
         ], [
-            'name' => $githubUser->name ?? $githubUser->nickname,
             'github_id' => $githubUser->id,
             // Если юзер создается впервые, даем ему случайный пароль для безопасности
             'password' => bcrypt(Str::random(24))

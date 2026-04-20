@@ -9,7 +9,7 @@ use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 
-#[Fillable(['name', 'email', 'password', 'github_id', 'api_token'])]
+#[Fillable(['email', 'password', 'github_id', 'api_token'])]
 #[Hidden(['password', 'remember_token', 'api_token'])]
 class User extends Authenticatable
 {
