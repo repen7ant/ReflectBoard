@@ -9,10 +9,15 @@ class ActivityService:
     @staticmethod
     async def get_activities(
         db: AsyncSession,
+        user_id: int,
         status: Status | None = None,
         category_id: int | None = None,
     ):
-        query = select(Activity).options(selectinload(Activity.category))
+        query = (
+            select(Activity)
+            .options(selectinload(Activity.category))
+            .where(Activity.user_id == user_id)
+        )
 
         if status:
             query = query.where(Activity.status == status)
@@ -26,8 +31,11 @@ class ActivityService:
     async def create_activity(
         db: AsyncSession,
         data: ActivityCreate,
+        user_id: int,
     ) -> Activity:
-        activity = Activity(**data.model_dump())
+        activity_dict = data.model_dump(exclude={"user_id"}, exclude_unset=True)
+        activity = Activity(**activity_dict, user_id=user_id)
+
         db.add(activity)
         await db.commit()
         result = await db.execute(
@@ -38,11 +46,14 @@ class ActivityService:
         return result.scalar_one()
 
     @staticmethod
-    async def delete_activity(
-        db: AsyncSession,
-        activity_id: int,
-    ) -> bool:
-        activity = await db.get(Activity, activity_id)
+    async def delete_activity(db: AsyncSession, activity_id: int, user_id: int) -> bool:
+        result = await db.execute(
+            select(Activity).where(
+                Activity.id == activity_id, Activity.user_id == user_id
+            )
+        )
+        activity = result.scalar_one_or_none()
+
         if not activity:
             return False
         await db.delete(activity)
@@ -51,12 +62,12 @@ class ActivityService:
 
     @staticmethod
     async def update_activity(
-        db: AsyncSession, activity_id: int, update_data: dict
+        db: AsyncSession, activity_id: int, user_id: int, update_data: dict
     ) -> Activity | None:
         result = await db.execute(
             select(Activity)
             .options(selectinload(Activity.category))
-            .where(Activity.id == activity_id)
+            .where(Activity.id == activity_id, Activity.user_id == user_id)
         )
         activity = result.scalar_one_or_none()
 
@@ -64,13 +75,12 @@ class ActivityService:
             return None
 
         for key, value in update_data.items():
-            if hasattr(activity, key):
+            if hasattr(activity, key) and key != "user_id":
                 setattr(activity, key, value)
 
         if update_data.get("status") == Status.done:
             activity.completed_at = func.now()
 
         await db.commit()
-
         await db.refresh(activity)
         return activity

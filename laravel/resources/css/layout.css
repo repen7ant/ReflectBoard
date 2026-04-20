@@ -1,0 +1,136 @@
+/* ─── Topbar ─── */
+.topbar {
+    height: 4rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem;
+    gap: 1.5rem;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+}
+
+.logo-icon {
+    width: 3rem;
+    height: 3rem;
+    object-fit: contain;
+}
+
+.nav-links {
+    display: flex;
+    gap: 1.25rem;
+}
+
+.nav-link {
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    transition: color 0.15s;
+}
+
+.nav-link:hover, .nav-link.active { color: var(--text); }
+
+/* ─── Board layout ─── */
+.board-wrapper {
+    padding: 1.5rem;
+    overflow-x: auto;
+    height: calc(100vh - 4rem);
+}
+
+.board-inner {
+    display: grid;
+    gap: 1rem;
+    height: 100%;
+    grid-template-columns: repeat(4, 1fr);
+    min-width: 0;
+}
+
+@media (max-width: 56.25rem) {
+    html {
+        font-size: 14px;
+    }
+
+    .board-inner {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .board-wrapper {
+        height: auto;
+        overflow-x: hidden;
+    }
+}
+
+@media (max-width: 32.5rem) {
+    html {
+        font-size: 12px;
+    }
+
+    .board-inner {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+/* ─── Column ─── */
+.column {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    min-height: 15rem;
+    max-height: calc(100vh - 7.5rem);
+    overflow: hidden;
+}
+
+@media (max-width: 56.25rem) {
+    .column {
+        max-height: 60vh;
+    }
+}
+
+@media (max-width: 32.5rem) {
+    .column {
+        max-height: 50vh;
+    }
+}
+
+.column-header {
+    padding: 1rem 1.25rem 0.875rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+
+.column-label {
+    font-size: 1rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+}
+
+.column-count {
+    font-size: 1rem;
+    color: var(--text-muted);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 0.25rem;
+    padding: 0.125rem 0.5rem;
+}
+
+.column-body {
+    padding: 0.75rem;
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+

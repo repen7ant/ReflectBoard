@@ -16,11 +16,13 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, index=True)
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str] = mapped_column(
         String(255), unique=True, index=True, nullable=False
     )
-    password: Mapped[str] = mapped_column(String(255), nullable=False)
+    password: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    github_id: Mapped[str | None] = mapped_column(
+        String(255), unique=True, nullable=True
+    )
     email_verified_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     remember_token: Mapped[str | None] = mapped_column(String(100), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
@@ -30,3 +32,6 @@ class User(Base):
 
     categories: Mapped[list["Category"]] = relationship(back_populates="user")
     activities: Mapped[list["Activity"]] = relationship(back_populates="user")
+    api_token: Mapped[str | None] = mapped_column(
+        String(80), unique=True, nullable=True
+    )

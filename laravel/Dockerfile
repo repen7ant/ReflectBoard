@@ -1,3 +1,10 @@
+FROM node:20-alpine AS frontend_builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
 FROM php:8.4-fpm-alpine
 
 RUN apk add --no-cache \
@@ -19,6 +26,8 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 
 COPY . .
+
+COPY --from=frontend_builder /app/public/build ./public/build
 
 RUN composer install --no-dev --optimize-autoloader --no-scripts
 

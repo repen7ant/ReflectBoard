@@ -38,4 +38,10 @@ return [
     'api_base' => [
         'url' => env('API_URL', 'http://reflectboard-api.local/api/v1'),
     ],
+
+    'github' => [
+        'client_id' => env('GITHUB_CLIENT_ID'),
+        'client_secret' => env('GITHUB_CLIENT_SECRET'),
+        'redirect' => env('GITHUB_REDIRECT_URI'),
+    ],
 ];

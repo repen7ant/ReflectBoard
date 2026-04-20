@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="api-token" content="{{ auth()->check() ? 'stub-token' : '' }}">
+    <meta name="api-token" content="{{ auth()->check() ? auth()->user()->api_token : '' }}">
     <title>ReflectBoard</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -14,7 +14,8 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/board.css">
+
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body x-data="board()" x-init="init()">
 
@@ -280,9 +281,8 @@
         <div class="toast" x-text="toast.message"></div>
     </template>
 
-    <script>
-        const API_BASE = '{{ config("services.api_base.url") }}'
-        const USER_ID = 1 // TODO: replace with ID from JWT in sprint #3
+<script>
+        const API_BASE = '{{ config("services.api_base.url") }}';
 
         function board() {
             return {
@@ -333,43 +333,58 @@
                 },
                 toast: { show: false, message: '' },
 
+                getAuthConfig() {
+                    const token = document.querySelector('meta[name="api-token"]')?.content;
+                    return {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    };
+                },
+
                 async init() {
-                    await this.loadActivities()
-                    await this.loadCategories()
-                    this.$nextTick(() => this.initSortable())
+                    const token = document.querySelector('meta[name="api-token"]')?.content;
+                    if (!token) {
+                        window.location.href = '/login';
+                        return;
+                    }
+
+                    await this.loadActivities();
+                    await this.loadCategories();
+                    this.$nextTick(() => this.initSortable());
                 },
 
                 async loadActivities() {
-                    this.loading = true
+                    this.loading = true;
                     try {
-                        const res = await axios.get(`${API_BASE}/activities`)
-                        const all = res.data
-                        Object.keys(this.activities).forEach(k => this.activities[k] = [])
+                        const res = await axios.get(`${API_BASE}/activities`, this.getAuthConfig());
+                        const all = res.data;
+                        Object.keys(this.activities).forEach(k => this.activities[k] = []);
                         all.forEach(a => {
                             if (this.activities[a.status] !== undefined) {
-                                this.activities[a.status].push(a)
+                                this.activities[a.status].push(a);
                             }
-                        })
+                        });
                     } catch (e) {
-                        this.showToast('Error loading activities')
+                        this.showToast('Error loading activities');
                     } finally {
-                        this.loading = false
+                        this.loading = false;
                     }
                 },
 
                 async loadCategories() {
                     try {
-                        const res = await axios.get(`${API_BASE}/categories`)
-                        this.categories = res.data
+                        const res = await axios.get(`${API_BASE}/categories`, this.getAuthConfig());
+                        this.categories = res.data;
                     } catch (e) {
-                        this.categories = []
+                        this.categories = [];
                     }
                 },
 
                 initSortable() {
                     this.columns.forEach(col => {
-                        const el = document.getElementById('col-' + col.status)
-                        if (!el) return
+                        const el = document.getElementById('col-' + col.status);
+                        if (!el) return;
                         Sortable.create(el, {
                             group: 'board',
                             animation: 150,
@@ -377,19 +392,19 @@
                             chosenClass: 'sortable-chosen',
                             draggable: '.card',
                             onEnd: async (evt) => {
-                                const activityId = parseInt(evt.item.dataset.id)
-                                const newStatus = evt.to.dataset.status
-                                if (evt.from === evt.to) return
+                                const activityId = parseInt(evt.item.dataset.id);
+                                const newStatus = evt.to.dataset.status;
+                                if (evt.from === evt.to) return;
                                 try {
-                                    await axios.patch(`${API_BASE}/activities/${activityId}`, { status: newStatus })
-                                    await this.loadActivities()
+                                    await axios.patch(`${API_BASE}/activities/${activityId}`, { status: newStatus }, this.getAuthConfig());
+                                    await this.loadActivities();
                                 } catch (e) {
-                                    this.showToast('Error moving activity')
-                                    await this.loadActivities()
+                                    this.showToast('Error moving activity');
+                                    await this.loadActivities();
                                 }
                             }
-                        })
-                    })
+                        });
+                    });
                 },
 
                 openCreateModal(status) {
@@ -401,13 +416,13 @@
                         category_id: '',
                         deadlineDate: '',
                         deadlineTime: '',
-                    }
+                    };
                 },
 
                 openEditModal(activity) {
-                    const dl = activity.deadline ? activity.deadline.split('T') : ['', '']
-                    const timeRaw = dl[1] ? dl[1].slice(0, 5) : ''
-                    const timeVal = (timeRaw === '00:00') ? '' : timeRaw
+                    const dl = activity.deadline ? activity.deadline.split('T') : ['', ''];
+                    const timeRaw = dl[1] ? dl[1].slice(0, 5) : '';
+                    const timeVal = (timeRaw === '00:00') ? '' : timeRaw;
 
                     this.editModal = {
                         open: true,
@@ -419,7 +434,7 @@
                         deadlineTime: timeVal,
                         reflection_text: activity.reflection_text || '',
                         time_spent_minutes: activity.time_spent_minutes || '',
-                    }
+                    };
                 },
 
                 openCompleteModal(activity) {
@@ -428,34 +443,32 @@
                         activity,
                         reflection: '',
                         time_spent: '',
-                    }
+                    };
                 },
 
                 selectCategory(id, isEdit = false) {
                     if (isEdit) {
-                        this.editModal.category_id = id
+                        this.editModal.category_id = id;
                     } else {
-                        this.modal.category_id = id
+                        this.modal.category_id = id;
                     }
                 },
 
                 async deleteCategory(categoryId) {
-                    if (!confirm('Delete this category? It will be removed from all tasks.')) return
+                    if (!confirm('Delete this category? It will be removed from all tasks.')) return;
 
                     try {
-                        await axios.delete(`${API_BASE}/categories/${categoryId}`, {
-                            params: { user_id: USER_ID }
-                        })
+                        await axios.delete(`${API_BASE}/categories/${categoryId}`, this.getAuthConfig());
 
-                        this.categories = this.categories.filter(c => c.id !== categoryId)
+                        this.categories = this.categories.filter(c => c.id !== categoryId);
 
-                        if (this.modal.category_id == categoryId) this.modal.category_id = ''
-                        if (this.editModal.category_id == categoryId) this.editModal.category_id = ''
+                        if (this.modal.category_id == categoryId) this.modal.category_id = '';
+                        if (this.editModal.category_id == categoryId) this.editModal.category_id = '';
 
-                        this.showToast('Category deleted')
+                        this.showToast('Category deleted');
                     } catch (e) {
-                        console.error(e)
-                        this.showToast('Error deleting category')
+                        console.error(e);
+                        this.showToast('Error deleting category');
                     }
                 },
 
@@ -464,55 +477,51 @@
                         open: true,
                         name: '',
                         color: '#957fb8',
-                    }
+                    };
                 },
 
                 async createNewCategory() {
-                    if (!this.categoryModal.name.trim()) return
-
+                    if (!this.categoryModal.name.trim()) return;
                     try {
                         const res = await axios.post(`${API_BASE}/categories`, {
                             name: this.categoryModal.name.trim(),
                             color: this.categoryModal.color,
-                            user_id : USER_ID,
-                        })
-
-                        this.categories.push(res.data)
-
-                        this.categoryModal.open = false
-                        this.showToast('Category created')
+                        }, this.getAuthConfig());
+                        this.categories.push(res.data);
+                        this.categoryModal.open = false;
+                        this.showToast('Category created');
                     } catch (e) {
-                        this.showToast('Error creating category')
+                        this.showToast('Error creating category');
                     }
                 },
 
                 getDeadline(dateVal, timeVal) {
-                    if (!dateVal) return null
-                    if (!timeVal) return dateVal
-                    return `${dateVal}T${timeVal}:00`
+                    if (!dateVal) return null;
+                    if (!timeVal) return dateVal;
+                    return `${dateVal}T${timeVal}:00`;
                 },
 
                 async createActivity() {
-                    if (!this.modal.title.trim()) return
+                    if (!this.modal.title.trim()) return;
                     try {
                         await axios.post(`${API_BASE}/activities`, {
-                            user_id: USER_ID,
                             title: this.modal.title.trim(),
                             description: this.modal.description || null,
                             category_id: this.modal.category_id || null,
                             deadline: this.getDeadline(this.modal.deadlineDate, this.modal.deadlineTime),
                             status: this.modal.status,
-                        })
-                        this.modal.open = false
-                        await this.loadActivities()
-                        this.showToast('Activity created')
+                        }, this.getAuthConfig());
+
+                        this.modal.open = false;
+                        await this.loadActivities();
+                        this.showToast('Activity created');
                     } catch (e) {
-                        this.showToast('Error creating activity')
+                        this.showToast('Error creating activity');
                     }
                 },
 
                 async saveActivity() {
-                    const id = this.editModal.activity.id
+                    const id = this.editModal.activity.id;
                     try {
                         await axios.patch(`${API_BASE}/activities/${id}`, {
                             title: this.editModal.title,
@@ -521,75 +530,75 @@
                             deadline: this.getDeadline(this.editModal.deadlineDate, this.editModal.deadlineTime),
                             reflection_text: this.editModal.reflection_text || null,
                             time_spent_minutes: this.editModal.time_spent_minutes ? parseInt(this.editModal.time_spent_minutes) : null,
-                        })
-                        this.editModal.open = false
-                        await this.loadActivities()
-                        this.showToast('Updated successfully')
+                        }, this.getAuthConfig());
+                        this.editModal.open = false;
+                        await this.loadActivities();
+                        this.showToast('Updated successfully');
                     } catch (e) {
-                        this.showToast('Error updating activity')
+                        this.showToast('Error updating activity');
                     }
                 },
 
                 async completeActivity() {
-                    if (!this.completeModal.activity) return
-                    const activityId = this.completeModal.activity.id
+                    if (!this.completeModal.activity) return;
+                    const activityId = this.completeModal.activity.id;
                     try {
                         await axios.patch(`${API_BASE}/activities/${activityId}`, {
                             status: 'done',
                             reflection_text: this.completeModal.reflection || null,
                             time_spent_minutes: parseInt(this.completeModal.time_spent) || null,
-                        })
-                        this.completeModal.open = false
-                        await this.loadActivities()
-                        this.showToast('Activity completed')
+                        }, this.getAuthConfig());
+                        this.completeModal.open = false;
+                        await this.loadActivities();
+                        this.showToast('Activity completed');
                     } catch (e) {
-                        this.showToast('Error completing activity')
+                        this.showToast('Error completing activity');
                     }
                 },
 
                 async deleteActivity(activity) {
-                    if (!confirm(`Delete "${activity.title}"?`)) return
+                    if (!confirm(`Delete "${activity.title}"?`)) return;
                     try {
-                        await axios.delete(`${API_BASE}/activities/${activity.id}`)
-                        this.editModal.open = false
-                        await this.loadActivities()
-                        this.showToast('Activity deleted')
+                        await axios.delete(`${API_BASE}/activities/${activity.id}`, this.getAuthConfig());
+                        this.editModal.open = false;
+                        await this.loadActivities();
+                        this.showToast('Activity deleted');
                     } catch (e) {
-                        this.showToast('Error deleting activity')
+                        this.showToast('Error deleting activity');
                     }
                 },
 
                 columnLabel(status) {
-                    return this.columns.find(c => c.status === status)?.label ?? status
+                    return this.columns.find(c => c.status === status)?.label ?? status;
                 },
 
                 statusLabel(status) {
                     const map = {
                         backlog: 'Backlog', today: 'Today',
                         in_process: 'In Process', on_reflection: 'On Reflection', done: 'Done',
-                    }
-                    return map[status] ?? status
+                    };
+                    return map[status] ?? status;
                 },
 
                 formatDate(dt, showYear = false) {
-                    if (!dt) return ''
-                    const date = new Date(dt)
-                    if (isNaN(date.getTime())) return dt
-                    const baseOptions = { day: 'numeric', month: 'short', ...(showYear ? { year: 'numeric' } : {}) }
-                    const isDateOnly = dt.length === 10 || (date.getHours() === 0 && date.getMinutes() === 0 && date.getSeconds() === 0)
-                    if (isDateOnly) return date.toLocaleDateString('en-US', baseOptions)
-                    return date.toLocaleString('en-US', { ...baseOptions, hour: '2-digit', minute: '2-digit' })
+                    if (!dt) return '';
+                    const date = new Date(dt);
+                    if (isNaN(date.getTime())) return dt;
+                    const baseOptions = { day: 'numeric', month: 'short', ...(showYear ? { year: 'numeric' } : {}) };
+                    const isDateOnly = dt.length === 10 || (date.getHours() === 0 && date.getMinutes() === 0 && date.getSeconds() === 0);
+                    if (isDateOnly) return date.toLocaleDateString('en-US', baseOptions);
+                    return date.toLocaleString('en-US', { ...baseOptions, hour: '2-digit', minute: '2-digit' });
                 },
 
                 isOverdue(dt) {
-                    return dt && new Date(dt) < new Date()
+                    return dt && new Date(dt) < new Date();
                 },
 
                 showToast(message) {
-                    this.toast = { show: true, message }
-                    setTimeout(() => this.toast.show = false, 2500)
+                    this.toast = { show: true, message };
+                    setTimeout(() => this.toast.show = false, 2500);
                 },
-            }
+            };
         }
     </script>
 

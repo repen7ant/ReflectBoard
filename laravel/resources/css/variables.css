@@ -1,0 +1,32 @@
+:root {
+    --bg: #121212;
+    --surface: #161616;
+    --surface-2: #1a1a1a;
+    --border: #2d2d2d;
+    --text: #dcd7ba;
+    --text-muted: #aca78b;
+    --accent: #7e9cd8;
+    --accent-purple: #957fb8;
+    --danger: #ffa066;
+    --accent-dim: rgba(126, 156, 216, 0.1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+    font-size: 18px;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Geist Mono', monospace;
+    min-height: 100vh;
+    font-size: 1rem;
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { width: 0.5rem; height: 0.5rem; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 0.25rem; }
+
