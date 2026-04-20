@@ -332,6 +332,7 @@
                     color: '#957fb8',
                 },
                 toast: { show: false, message: '' },
+                ws: null,
 
                 getAuthConfig() {
                     const token = document.querySelector('meta[name="api-token"]')?.content;
@@ -352,6 +353,47 @@
                     await this.loadActivities();
                     await this.loadCategories();
                     this.$nextTick(() => this.initSortable());
+                    this.initWs(token);
+                },
+
+                initWs(token) {
+                    const url = new URL(API_BASE);
+                    const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+                    const wsUrl = `${wsProtocol}//${url.host}/api/v1/ws?token=${token}`;
+
+                    this.ws = new WebSocket(wsUrl);
+
+                    this.ws.onmessage = (event) => {
+                        const updatedActivity = JSON.parse(event.data);
+                        this.handleRemoteUpdate(updatedActivity);
+                    };
+
+                    this.ws.onclose = () => {
+                        console.log("WebSocket disconnected. Auto-reconnect in 3s...");
+                        setTimeout(() => this.initWs(token), 3000);
+                    };
+                },
+
+                handleRemoteUpdate(updated) {
+                    let foundInCorrectColumn = false;
+                    const targetCol = this.activities[updated.status];
+
+                    if (targetCol) {
+                        const idx = targetCol.findIndex(a => a.id === updated.id);
+                        if (idx > -1) {
+                            targetCol[idx] = updated;
+                            foundInCorrectColumn = true;
+                        }
+                    }
+
+                    if (!foundInCorrectColumn) {
+                        Object.keys(this.activities).forEach(status => {
+                            this.activities[status] = this.activities[status].filter(a => a.id !== updated.id);
+                        });
+                        if (this.activities[updated.status]) {
+                            this.activities[updated.status].push(updated);
+                        }
+                    }
                 },
 
                 async loadActivities() {
