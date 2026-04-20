@@ -34,6 +34,11 @@ async def create_activity(
     current_user: User = Depends(get_current_user),
 ):
     activity = await ActivityService.create_activity(db, data, current_user.id)
+
+    activity_out = ActivityOut.model_validate(activity)
+    payload = json.dumps({"action": "create", "data": jsonable_encoder(activity_out)})
+    await redis_client.publish(f"board:{current_user.id}", payload)
+
     return activity
 
 
@@ -46,6 +51,9 @@ async def delete_activity(
     deleted = await ActivityService.delete_activity(db, activity_id, current_user.id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Activity not found")
+
+    payload = json.dumps({"action": "delete", "data": {"id": activity_id}})
+    await redis_client.publish(f"board:{current_user.id}", payload)
 
 
 @router.patch("/activities/{activity_id}", response_model=ActivityOut)
@@ -64,8 +72,7 @@ async def update_activity(
         raise HTTPException(status_code=404, detail="Activity not found")
 
     activity_out = ActivityOut.model_validate(activity)
-    payload = json.dumps(jsonable_encoder(activity_out))
-
+    payload = json.dumps({"action": "update", "data": jsonable_encoder(activity_out)})
     await redis_client.publish(f"board:{current_user.id}", payload)
 
     return activity

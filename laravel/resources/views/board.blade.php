@@ -374,25 +374,43 @@
                     };
                 },
 
-                handleRemoteUpdate(updated) {
-                    let foundInCorrectColumn = false;
-                    const targetCol = this.activities[updated.status];
+                handleRemoteUpdate(payload) {
+                    const action = payload.action;
+                    const item = payload.data;
 
-                    if (targetCol) {
-                        const idx = targetCol.findIndex(a => a.id === updated.id);
-                        if (idx > -1) {
-                            targetCol[idx] = updated;
-                            foundInCorrectColumn = true;
+                    if (action === 'create') {
+                        if (this.activities[item.status]) {
+                            const exists = this.activities[item.status].find(a => a.id === item.id);
+                            if (!exists) {
+                                this.activities[item.status].push(item);
+                            }
                         }
-                    }
 
-                    if (!foundInCorrectColumn) {
+                    } else if (action === 'update') {
+                        let foundInCorrectColumn = false;
+                        const targetCol = this.activities[item.status];
+
+                        if (targetCol) {
+                            const idx = targetCol.findIndex(a => a.id === item.id);
+                            if (idx > -1) {
+                                targetCol[idx] = item;
+                                foundInCorrectColumn = true;
+                            }
+                        }
+
+                        if (!foundInCorrectColumn) {
+                            Object.keys(this.activities).forEach(status => {
+                                this.activities[status] = this.activities[status].filter(a => a.id !== item.id);
+                            });
+                            if (this.activities[item.status]) {
+                                this.activities[item.status].push(item);
+                            }
+                        }
+
+                    } else if (action === 'delete') {
                         Object.keys(this.activities).forEach(status => {
-                            this.activities[status] = this.activities[status].filter(a => a.id !== updated.id);
+                            this.activities[status] = this.activities[status].filter(a => a.id !== item.id);
                         });
-                        if (this.activities[updated.status]) {
-                            this.activities[updated.status].push(updated);
-                        }
                     }
                 },
 
