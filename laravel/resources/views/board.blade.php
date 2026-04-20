@@ -138,6 +138,11 @@
                 </div>
 
                 <div class="field">
+                    <label>Tags</label>
+                    <input type="text" x-model="modal.tags_string" placeholder="e.g. #fastapi #gym" @keydown.enter="createActivity()">
+                </div>
+
+                <div class="field">
                     <label>Deadline</label>
                     <div style="display:flex;gap:0.5rem;">
                         <input type="date" x-model="modal.deadlineDate" style="flex:1;">
@@ -198,6 +203,11 @@
         style="width: 100%; font-size: 0.875rem; justify-content: center;">
         + New category
     </button>
+                </div>
+
+                <div class="field">
+                    <label>Tags</label>
+                    <input type="text" x-model="editModal.tags_string" placeholder="e.g. #fastapi #gym">
                 </div>
 
                 <div class="field">
@@ -308,6 +318,7 @@
                     category_id: '',
                     deadlineDate: '',
                     deadlineTime: '',
+                    tags_string: '',
                 },
                 editModal: {
                     open: false,
@@ -319,6 +330,7 @@
                     deadlineTime: '',
                     reflection_text: '',
                     time_spent_minutes: '',
+                    tags_string: '',
                 },
                 completeModal: {
                     open: false,
@@ -494,6 +506,7 @@
                         deadlineTime: timeVal,
                         reflection_text: activity.reflection_text || '',
                         time_spent_minutes: activity.time_spent_minutes || '',
+                        tags_string: (activity.tags || []).map(t => `#${t}`).join(' '),
                     };
                 },
 
@@ -561,6 +574,14 @@
                     return `${dateVal}T${timeVal}:00`;
                 },
 
+                parseTags(tagsString) {
+                    if (!tagsString) return [];
+                    if (!tagsString.trim()) return [];
+                    return tagsString.split(/[\s,]+/)
+                        .map(tag => tag.replace(/^#/, '').trim())
+                        .filter(tag => tag.length > 0);
+                },
+
                 async createActivity() {
                     if (!this.modal.title.trim()) return;
                     try {
@@ -570,6 +591,7 @@
                             category_id: this.modal.category_id || null,
                             deadline: this.getDeadline(this.modal.deadlineDate, this.modal.deadlineTime),
                             status: this.modal.status,
+                            tags: this.parseTags(this.modal.tags_string),
                         }, this.getAuthConfig());
 
                         this.modal.open = false;
@@ -590,6 +612,7 @@
                             deadline: this.getDeadline(this.editModal.deadlineDate, this.editModal.deadlineTime),
                             reflection_text: this.editModal.reflection_text || null,
                             time_spent_minutes: this.editModal.time_spent_minutes ? parseInt(this.editModal.time_spent_minutes) : null,
+                            tags: this.parseTags(this.editModal.tags_string),
                         }, this.getAuthConfig());
                         this.editModal.open = false;
                         await this.loadActivities();
