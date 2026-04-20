@@ -73,7 +73,15 @@
                                             <span x-text="activity.category.name"></span>
                                         </div>
                                     </template>
-
+                                    <template x-if="activity.tags && activity.tags.length > 0">
+                                        <div style="display: flex; gap: 0.25rem; flex-wrap: wrap; margin-top: 0.25rem;">
+                                            <template x-for="tag in activity.tags" :key="tag">
+                                                <span style="font-size: 0.7rem; color: #957fb8; background: rgba(149, 127, 184, 0.1); padding: 0.1rem 0.4rem; border-radius: 0.25rem;">
+                                                    #<span x-text="tag"></span>
+                                                </span>
+                                            </template>
+                                        </div>
+                                    </template>
                                     <template x-if="activity.deadline">
                                         <div
                                             class="card-deadline"
@@ -137,9 +145,27 @@
                     </button>
                 </div>
 
-                <div class="field">
+                <div class="field" x-data="{ newTag: '' }">
                     <label>Tags</label>
-                    <input type="text" x-model="modal.tags_string" placeholder="e.g. #fastapi #gym" @keydown.enter="createActivity()">
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.375rem; padding: 0.375rem 0.5rem; border: 1px solid var(--border); border-radius: 0.375rem; background: var(--bg); min-height: 2.75rem; align-items: center;">
+
+                        <template x-for="(tag, index) in modal.tags" :key="index">
+                            <span style="font-size: 1rem; font-weight: 500; color: #fff; background: #957fb8; padding: 0.15rem 0.5rem; border-radius: 9999px; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                <span x-text="'#' + tag"></span>
+                                <button type="button" @click="modal.tags.splice(index, 1)" style="opacity: 0.8; cursor: pointer;">&times;</button>
+                            </span>
+                        </template>
+
+                        <input
+                            type="text"
+                            x-model="newTag"
+                            placeholder="Add tag & press space..."
+                            @keydown.space.prevent="if(newTag.trim()){ modal.tags.push(newTag.replace(/^#/, '').trim()); newTag = ''; }"
+                            @keydown.enter.prevent="if(newTag.trim()){ modal.tags.push(newTag.replace(/^#/, '').trim()); newTag = ''; }"
+                            @keydown.backspace="if(newTag === '' && modal.tags.length > 0){ modal.tags.pop(); }"
+                            style="border: none; outline: none; background: transparent; flex: 1; min-width: 100px; padding: 0; box-shadow: none;"
+                        >
+                    </div>
                 </div>
 
                 <div class="field">
@@ -205,9 +231,27 @@
     </button>
                 </div>
 
-                <div class="field">
+                <div class="field" x-data="{ newTag: '' }">
                     <label>Tags</label>
-                    <input type="text" x-model="editModal.tags_string" placeholder="e.g. #fastapi #gym">
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.375rem; padding: 0.375rem 0.5rem; border: 1px solid var(--border); border-radius: 0.375rem; background: var(--bg); min-height: 2.75rem; align-items: center;">
+
+                        <template x-for="(tag, index) in editModal.tags" :key="index">
+                            <span style="font-size: 1rem; font-weight: 500; color: #fff; background: #957fb8; padding: 0.15rem 0.5rem; border-radius: 9999px; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                <span x-text="'#' + tag"></span>
+                                <button type="button" @click="editModal.tags.splice(index, 1)" style="opacity: 0.8; cursor: pointer;">&times;</button>
+                            </span>
+                        </template>
+
+                        <input
+                            type="text"
+                            x-model="newTag"
+                            placeholder="Add tag & press space..."
+                            @keydown.space.prevent="if(newTag.trim()){ editModal.tags.push(newTag.replace(/^#/, '').trim()); newTag = ''; }"
+                            @keydown.enter.prevent="if(newTag.trim()){ editModal.tags.push(newTag.replace(/^#/, '').trim()); newTag = ''; }"
+                            @keydown.backspace="if(newTag === '' && editModal.tags.length > 0){ editModal.tags.pop(); }"
+                            style="border: none; outline: none; background: transparent; flex: 1; min-width: 100px; padding: 0; box-shadow: none;"
+                        >
+                    </div>
                 </div>
 
                 <div class="field">
@@ -318,7 +362,7 @@
                     category_id: '',
                     deadlineDate: '',
                     deadlineTime: '',
-                    tags_string: '',
+                    tags: [],
                 },
                 editModal: {
                     open: false,
@@ -330,7 +374,7 @@
                     deadlineTime: '',
                     reflection_text: '',
                     time_spent_minutes: '',
-                    tags_string: '',
+                    tags: [],
                 },
                 completeModal: {
                     open: false,
@@ -488,6 +532,7 @@
                         category_id: '',
                         deadlineDate: '',
                         deadlineTime: '',
+                        tags: [],
                     };
                 },
 
@@ -506,7 +551,7 @@
                         deadlineTime: timeVal,
                         reflection_text: activity.reflection_text || '',
                         time_spent_minutes: activity.time_spent_minutes || '',
-                        tags_string: (activity.tags || []).map(t => `#${t}`).join(' '),
+                        tags: activity.tags ? [...activity.tags] : [],
                     };
                 },
 
@@ -574,14 +619,6 @@
                     return `${dateVal}T${timeVal}:00`;
                 },
 
-                parseTags(tagsString) {
-                    if (!tagsString) return [];
-                    if (!tagsString.trim()) return [];
-                    return tagsString.split(/[\s,]+/)
-                        .map(tag => tag.replace(/^#/, '').trim())
-                        .filter(tag => tag.length > 0);
-                },
-
                 async createActivity() {
                     if (!this.modal.title.trim()) return;
                     try {
@@ -591,7 +628,7 @@
                             category_id: this.modal.category_id || null,
                             deadline: this.getDeadline(this.modal.deadlineDate, this.modal.deadlineTime),
                             status: this.modal.status,
-                            tags: this.parseTags(this.modal.tags_string),
+                            tags: this.modal.tags,
                         }, this.getAuthConfig());
 
                         this.modal.open = false;
@@ -612,7 +649,7 @@
                             deadline: this.getDeadline(this.editModal.deadlineDate, this.editModal.deadlineTime),
                             reflection_text: this.editModal.reflection_text || null,
                             time_spent_minutes: this.editModal.time_spent_minutes ? parseInt(this.editModal.time_spent_minutes) : null,
-                            tags: this.parseTags(this.editModal.tags_string),
+                            tags: this.editModal.tags,
                         }, this.getAuthConfig());
                         this.editModal.open = false;
                         await this.loadActivities();
