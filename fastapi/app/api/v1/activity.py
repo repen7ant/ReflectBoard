@@ -1,9 +1,13 @@
+import json
+
+from app.db.redis import redis_client
 from app.db.session import get_db
 from app.dependencies.auth import get_current_user
 from app.models.activity import Status
 from app.models.user import User
 from app.schemas.activity import ActivityCreate, ActivityOut, ActivityUpdate
 from app.services.activity_service import ActivityService
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -58,5 +62,10 @@ async def update_activity(
 
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
+
+    activity_out = ActivityOut.model_validate(activity)
+    payload = json.dumps(jsonable_encoder(activity_out))
+
+    await redis_client.publish(f"board:{current_user.id}", payload)
 
     return activity
