@@ -515,6 +515,7 @@
 
                             onEnd: async (evt) => {
                                 const activityId = parseInt(evt.item.dataset.id);
+                                const oldStatus = evt.from.dataset.status;
                                 const newStatus = evt.to.dataset.status;
 
                                 evt.item.remove();
@@ -522,11 +523,17 @@
                                     evt.from.insertBefore(evt.item, evt.from.children[evt.oldIndex]);
                                 }
 
-                                if (evt.from === evt.to) return;
+                                if (oldStatus === newStatus) return;
+
+                                const taskIndex = this.activities[oldStatus].findIndex(a => a.id === activityId);
+                                if (taskIndex > -1) {
+                                    const [task] = this.activities[oldStatus].splice(taskIndex, 1);
+                                    task.status = newStatus;
+                                    this.activities[newStatus].splice(evt.newIndex, 0, task);
+                                }
 
                                 try {
                                     await axios.patch(`${API_BASE}/activities/${activityId}`, { status: newStatus }, this.getAuthConfig());
-                                    await this.loadActivities();
                                 } catch (e) {
                                     this.showToast('Error moving activity');
                                     await this.loadActivities();
