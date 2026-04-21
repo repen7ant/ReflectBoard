@@ -14,7 +14,7 @@ class Activity extends Model
         'user_id', 'parent_id', 'category_id', 'title', 'description',
         'reflection_text', 'time_spent_minutes', 'status',
         'is_project', 'is_on_board', 'is_quick_capture',
-        'deadline', 'tags', 'completed_at', 'position'
+        'deadline', 'tags', 'completed_at', 'position',
     ];
 
     protected $casts = [
