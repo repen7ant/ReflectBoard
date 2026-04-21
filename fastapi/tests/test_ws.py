@@ -44,7 +44,7 @@ class TestWebSocket:
             async with AsyncClient(
                 transport=ASGIWebSocketTransport(app=app), base_url="http://test"
             ) as ws_client:
-                async with aconnect_ws("/api/v1/ws?token=valid_token", ws_client) as ws:
+                async with aconnect_ws("/api/v1/ws?token=valid_token", ws_client) as ws:  # type: ignore
                     assert ws is not None
 
     async def test_receives_board_event(self, client: AsyncClient, test_user):
@@ -71,7 +71,7 @@ class TestWebSocket:
             async with AsyncClient(
                 transport=ASGIWebSocketTransport(app=app), base_url="http://test"
             ) as ws_client:
-                async with aconnect_ws("/api/v1/ws?token=valid_token", ws_client) as ws:
+                async with aconnect_ws("/api/v1/ws?token=valid_token", ws_client) as ws:  # type: ignore
                     received = await asyncio.wait_for(ws.receive_text(), timeout=2.0)
                     data = json.loads(received)
                     assert data["type"] == "card_moved"

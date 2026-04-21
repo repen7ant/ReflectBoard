@@ -1,4 +1,5 @@
 import os
+from typing import AsyncGenerator
 from unittest.mock import AsyncMock, patch
 
 import pytest_asyncio
@@ -79,7 +80,7 @@ async def test_category(db: AsyncSession, test_user: User) -> Category:
 
 
 @pytest_asyncio.fixture()
-async def client(session_maker, test_user: User) -> AsyncClient:
+async def client(session_maker, test_user: User) -> AsyncGenerator[AsyncClient, None]:
     async def override_get_db():
         async with session_maker() as session:
             yield session
