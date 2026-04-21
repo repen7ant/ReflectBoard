@@ -12,18 +12,22 @@ class TestGetCategories:
         assert res.status_code == 200
         assert res.json() == []
 
-    async def test_returns_only_own_categories(
+    async def test_does_not_return_other_users_categories(
         self, client: AsyncClient, db: AsyncSession, test_user: User
     ):
+        other_user = User(email="other4@example.com", password="hashed")
+        db.add(other_user)
+        await db.commit()
+
         from app.models.category import Category
 
-        db.add(Category(user_id=test_user.id, name="Work", color="#7e9cd8"))
+        db.add(Category(user_id=other_user.id, name="Secret", color="#000"))
+        db.add(Category(user_id=test_user.id, name="Mine", color="#fff"))
         await db.commit()
 
         res = await client.get("/api/v1/categories")
-        assert res.status_code == 200
         assert len(res.json()) == 1
-        assert res.json()[0]["name"] == "Work"
+        assert res.json()[0]["name"] == "Mine"
 
 
 class TestCreateCategory:
