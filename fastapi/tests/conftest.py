@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.pool import NullPool
 
 TEST_DATABASE_URL = os.getenv(
-    "DATABASE_URL", "mysql+aiomysql://root:root@localhost/reflectboard_test"
+    "TEST_DATABASE_URL", "mysql+aiomysql://root:secure_password@db/reflectboard_test"
 )
 
 
