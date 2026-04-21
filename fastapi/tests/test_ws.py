@@ -18,9 +18,7 @@ class TestWebSocket:
                 transport=ASGIWebSocketTransport(app=app), base_url="http://test"
             ) as ws_client:
                 with pytest.raises(WebSocketDisconnect) as exc_info:
-                    async with aconnect_ws(
-                        "/api/v1/ws?token=invalid_token", ws_client
-                    ) as ws:
+                    async with aconnect_ws("/api/v1/ws?token=invalid_token", ws_client):
                         pass
                 assert exc_info.value.code == 1008
 
@@ -102,7 +100,7 @@ class TestWebSocket:
             async with AsyncClient(
                 transport=ASGIWebSocketTransport(app=app), base_url="http://test"
             ) as ws_client:
-                async with aconnect_ws("/api/v1/ws?token=valid_token", ws_client) as ws:
+                async with aconnect_ws("/api/v1/ws?token=valid_token", ws_client):
                     pass
 
             mock_pubsub.subscribe.assert_called_once_with(f"board:{test_user.id}")
