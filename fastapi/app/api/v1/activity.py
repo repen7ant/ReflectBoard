@@ -1,9 +1,13 @@
+import json
+
+from app.db.redis import redis_client
 from app.db.session import get_db
 from app.dependencies.auth import get_current_user
 from app.models.activity import Status
 from app.models.user import User
 from app.schemas.activity import ActivityCreate, ActivityOut, ActivityUpdate
 from app.services.activity_service import ActivityService
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -30,6 +34,11 @@ async def create_activity(
     current_user: User = Depends(get_current_user),
 ):
     activity = await ActivityService.create_activity(db, data, current_user.id)
+
+    activity_out = ActivityOut.model_validate(activity)
+    payload = json.dumps({"action": "create", "data": jsonable_encoder(activity_out)})
+    await redis_client.publish(f"board:{current_user.id}", payload)
+
     return activity
 
 
@@ -42,6 +51,9 @@ async def delete_activity(
     deleted = await ActivityService.delete_activity(db, activity_id, current_user.id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Activity not found")
+
+    payload = json.dumps({"action": "delete", "data": {"id": activity_id}})
+    await redis_client.publish(f"board:{current_user.id}", payload)
 
 
 @router.patch("/activities/{activity_id}", response_model=ActivityOut)
@@ -59,4 +71,32 @@ async def update_activity(
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
 
+    activity_out = ActivityOut.model_validate(activity)
+    payload = json.dumps({"action": "update", "data": jsonable_encoder(activity_out)})
+    await redis_client.publish(f"board:{current_user.id}", payload)
+
     return activity
+
+
+@router.post("/activities/reorder")
+async def reorder_activities(
+    data: dict,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    activity_id = data.get("activity_id")
+    new_status = data.get("new_status")
+    ordered_ids = data.get("ordered_ids", [])
+
+    await ActivityService.reorder_activities(
+        db=db,
+        user_id=current_user.id,
+        activity_id=activity_id,
+        new_status=new_status,
+        ordered_ids=ordered_ids,
+    )
+
+    payload = json.dumps({"action": "reorder", "data": {}})
+    await redis_client.publish(f"board:{current_user.id}", payload)
+
+    return {"success": True}

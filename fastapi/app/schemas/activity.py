@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from app.models.activity import Status
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from .category import CategoryOut
 
@@ -20,7 +20,7 @@ class ActivityOut(BaseModel):
     is_on_board: bool
     is_quick_capture: bool
     deadline: datetime | None
-    tags: list | None
+    tags: list[str] | None = None
     completed_at: datetime | None
     created_at: datetime
     updated_at: datetime
@@ -37,6 +37,7 @@ class ActivityUpdate(BaseModel):
     reflection_text: str | None = None
     time_spent_minutes: int | None = None
     deadline: datetime | None = None
+    tags: list[str] | None = None
 
 
 class ActivityCreate(BaseModel):
@@ -48,4 +49,4 @@ class ActivityCreate(BaseModel):
     is_project: bool = False
     is_quick_capture: bool = False
     deadline: datetime | None = None
-    tags: list | None = None
+    tags: list[str] = Field(default_factory=list)

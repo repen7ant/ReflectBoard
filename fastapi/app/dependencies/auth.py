@@ -35,3 +35,20 @@ async def get_current_user(
         )
 
     return user
+
+
+async def get_ws_user(token: str, db: AsyncSession) -> User | None:
+    cache_key = f"auth_token:{token}"
+    user_id = await redis_client.get(cache_key)
+
+    if user_id:
+        result = await db.execute(select(User).where(User.id == int(user_id)))
+        return result.scalar_one_or_none()
+
+    result = await db.execute(select(User).where(User.api_token == token))
+    user = result.scalar_one_or_none()
+
+    if user:
+        await redis_client.setex(cache_key, 3600, user.id)
+
+    return user

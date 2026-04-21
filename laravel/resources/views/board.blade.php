@@ -73,7 +73,13 @@
                                             <span x-text="activity.category.name"></span>
                                         </div>
                                     </template>
-
+                                    <div x-show="activity.tags && activity.tags.length > 0" style="display: flex; gap: 0.25rem; flex-wrap: wrap; margin-top: 0.25rem;">
+                                        <template x-for="tag in (activity.tags || [])" :key="tag">
+                                            <span style="font-size: 0.7rem; color: #957fb8; background: rgba(149, 127, 184, 0.1); padding: 0.1rem 0.4rem; border-radius: 0.25rem;">
+                                                #<span x-text="tag"></span>
+                                            </span>
+                                        </template>
+                                    </div>
                                     <template x-if="activity.deadline">
                                         <div
                                             class="card-deadline"
@@ -137,6 +143,29 @@
                     </button>
                 </div>
 
+                <div class="field" x-data="{ newTag: '' }">
+                    <label>Tags</label>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.375rem; padding: 0.375rem 0.5rem; border: 1px solid var(--border); border-radius: 0.375rem; background: var(--bg); min-height: 2.75rem; align-items: center;">
+
+                        <template x-for="(tag, index) in modal.tags" :key="index">
+                            <span style="font-size: 1rem; font-weight: 500; color: #fff; background: #957fb8; padding: 0.15rem 0.5rem; border-radius: 9999px; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                <span x-text="'#' + tag"></span>
+                                <button type="button" @click="modal.tags.splice(index, 1)" style="opacity: 0.8; cursor: pointer;">&times;</button>
+                            </span>
+                        </template>
+
+                        <input
+                            type="text"
+                            x-model="newTag"
+                            :placeholder="modal.tags.length === 0 ? 'Add tag & press space...' : ''"
+                            @keydown.space.prevent="if(newTag.trim()){ modal.tags.push(newTag.replace(/^#/, '').trim()); newTag = ''; }"
+                            @keydown.enter.prevent="if(newTag.trim()){ modal.tags.push(newTag.replace(/^#/, '').trim()); newTag = ''; }"
+                            @keydown.backspace="if(newTag === '' && modal.tags.length > 0){ modal.tags.pop(); }"
+                            style="border: none; outline: none; background: transparent; flex: 1; min-width: 100px; padding: 0; box-shadow: none;"
+                        >
+                    </div>
+                </div>
+
                 <div class="field">
                     <label>Deadline</label>
                     <div style="display:flex;gap:0.5rem;">
@@ -191,13 +220,36 @@
                         </template>
                     </div>
 
-    <button
-        type="button"
-        @click="openCreateCategoryModal()"
-        class="btn btn-ghost"
-        style="width: 100%; font-size: 0.875rem; justify-content: center;">
-        + New category
-    </button>
+                    <button
+                        type="button"
+                        @click="openCreateCategoryModal()"
+                        class="btn btn-ghost"
+                        style="width: 100%; font-size: 0.875rem; justify-content: center;">
+                        + New category
+                    </button>
+                </div>
+
+                <div class="field" x-data="{ newTag: '' }">
+                    <label>Tags</label>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.375rem; padding: 0.375rem 0.5rem; border: 1px solid var(--border); border-radius: 0.375rem; background: var(--bg); min-height: 2.75rem; align-items: center;">
+
+                        <template x-for="(tag, index) in editModal.tags" :key="index">
+                            <span style="font-size: 1rem; font-weight: 500; color: #fff; background: #957fb8; padding: 0.15rem 0.5rem; border-radius: 9999px; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                <span x-text="'#' + tag"></span>
+                                <button type="button" @click="editModal.tags.splice(index, 1)" style="opacity: 0.8; cursor: pointer;">&times;</button>
+                            </span>
+                        </template>
+
+                        <input
+                            type="text"
+                            x-model="newTag"
+                            :placeholder="editModal.tags.length === 0 ? 'Add tag & press space...' : ''"
+                            @keydown.space.prevent="if(newTag.trim()){ editModal.tags.push(newTag.replace(/^#/, '').trim()); newTag = ''; }"
+                            @keydown.enter.prevent="if(newTag.trim()){ editModal.tags.push(newTag.replace(/^#/, '').trim()); newTag = ''; }"
+                            @keydown.backspace="if(newTag === '' && editModal.tags.length > 0){ editModal.tags.pop(); }"
+                            style="border: none; outline: none; background: transparent; flex: 1; min-width: 100px; padding: 0; box-shadow: none;"
+                        >
+                    </div>
                 </div>
 
                 <div class="field">
@@ -308,6 +360,7 @@
                     category_id: '',
                     deadlineDate: '',
                     deadlineTime: '',
+                    tags: [],
                 },
                 editModal: {
                     open: false,
@@ -319,6 +372,7 @@
                     deadlineTime: '',
                     reflection_text: '',
                     time_spent_minutes: '',
+                    tags: [],
                 },
                 completeModal: {
                     open: false,
@@ -332,6 +386,7 @@
                     color: '#957fb8',
                 },
                 toast: { show: false, message: '' },
+                ws: null,
 
                 getAuthConfig() {
                     const token = document.querySelector('meta[name="api-token"]')?.content;
@@ -352,10 +407,71 @@
                     await this.loadActivities();
                     await this.loadCategories();
                     this.$nextTick(() => this.initSortable());
+                    this.initWs(token);
                 },
 
-                async loadActivities() {
-                    this.loading = true;
+                initWs(token) {
+                    const url = new URL(API_BASE);
+                    const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+                    const wsUrl = `${wsProtocol}//${url.host}/api/v1/ws?token=${token}`;
+
+                    this.ws = new WebSocket(wsUrl);
+
+                    this.ws.onmessage = (event) => {
+                        const updatedActivity = JSON.parse(event.data);
+                        this.handleRemoteUpdate(updatedActivity);
+                    };
+
+                    this.ws.onclose = () => {
+                        console.log("WebSocket disconnected. Auto-reconnect in 3s...");
+                        setTimeout(() => this.initWs(token), 3000);
+                    };
+                },
+
+                handleRemoteUpdate(payload) {
+                    const action = payload.action;
+                    const item = payload.data;
+
+                    if (action === 'create') {
+                        if (this.activities[item.status]) {
+                            const exists = this.activities[item.status].find(a => a.id === item.id);
+                            if (!exists) {
+                                this.activities[item.status].push(item);
+                            }
+                        }
+
+                    } else if (action === 'update') {
+                        let foundInCorrectColumn = false;
+                        const targetCol = this.activities[item.status];
+
+                        if (targetCol) {
+                            const idx = targetCol.findIndex(a => a.id === item.id);
+                            if (idx > -1) {
+                                targetCol[idx] = item;
+                                foundInCorrectColumn = true;
+                            }
+                        }
+
+                        if (!foundInCorrectColumn) {
+                            Object.keys(this.activities).forEach(status => {
+                                this.activities[status] = this.activities[status].filter(a => a.id !== item.id);
+                            });
+                            if (this.activities[item.status]) {
+                                this.activities[item.status].push(item);
+                            }
+                        }
+
+                    } else if (action === 'delete') {
+                        Object.keys(this.activities).forEach(status => {
+                            this.activities[status] = this.activities[status].filter(a => a.id !== item.id);
+                        });
+                    } else if (action === 'reorder') {
+                        this.loadActivities(false);
+                    }
+                },
+
+                async loadActivities(showSpinner = true) {
+                    if (showSpinner) this.loading = true;
                     try {
                         const res = await axios.get(`${API_BASE}/activities`, this.getAuthConfig());
                         const all = res.data;
@@ -368,7 +484,7 @@
                     } catch (e) {
                         this.showToast('Error loading activities');
                     } finally {
-                        this.loading = false;
+                        if (showSpinner) this.loading = false;
                     }
                 },
 
@@ -391,16 +507,46 @@
                             ghostClass: 'sortable-ghost',
                             chosenClass: 'sortable-chosen',
                             draggable: '.card',
+
+                            onChoose: (evt) => {
+                                evt.item.setAttribute('x-ignore', '');
+                            },
+                            onUnchoose: (evt) => {
+                                evt.item.removeAttribute('x-ignore');
+                            },
+
                             onEnd: async (evt) => {
                                 const activityId = parseInt(evt.item.dataset.id);
+                                const oldStatus = evt.from.dataset.status;
                                 const newStatus = evt.to.dataset.status;
-                                if (evt.from === evt.to) return;
+                                const oldIndex = evt.oldIndex;
+                                const newIndex = evt.newIndex;
+
+                                evt.item.remove();
+                                if (oldIndex !== undefined) {
+                                    evt.from.insertBefore(evt.item, evt.from.children[oldIndex]);
+                                }
+
+                                if (oldStatus === newStatus && oldIndex === newIndex) return;
+
+                                const taskIndex = this.activities[oldStatus].findIndex(a => a.id === activityId);
+                                if (taskIndex > -1) {
+                                    const [task] = this.activities[oldStatus].splice(taskIndex, 1);
+                                    task.status = newStatus;
+                                    this.activities[newStatus].splice(newIndex, 0, task);
+                                }
+
+                                const orderedIds = this.activities[newStatus].map(a => a.id);
+
                                 try {
-                                    await axios.patch(`${API_BASE}/activities/${activityId}`, { status: newStatus }, this.getAuthConfig());
-                                    await this.loadActivities();
+                                    await axios.post(`${API_BASE}/activities/reorder`, {
+                                        activity_id: activityId,
+                                        new_status: newStatus,
+                                        ordered_ids: orderedIds
+                                    }, this.getAuthConfig());
                                 } catch (e) {
                                     this.showToast('Error moving activity');
-                                    await this.loadActivities();
+                                    await this.loadActivities(false);
                                 }
                             }
                         });
@@ -416,6 +562,7 @@
                         category_id: '',
                         deadlineDate: '',
                         deadlineTime: '',
+                        tags: [],
                     };
                 },
 
@@ -434,6 +581,7 @@
                         deadlineTime: timeVal,
                         reflection_text: activity.reflection_text || '',
                         time_spent_minutes: activity.time_spent_minutes || '',
+                        tags: activity.tags ? [...activity.tags] : [],
                     };
                 },
 
@@ -504,16 +652,29 @@
                 async createActivity() {
                     if (!this.modal.title.trim()) return;
                     try {
-                        await axios.post(`${API_BASE}/activities`, {
+                        const res = await axios.post(`${API_BASE}/activities`, {
                             title: this.modal.title.trim(),
                             description: this.modal.description || null,
                             category_id: this.modal.category_id || null,
                             deadline: this.getDeadline(this.modal.deadlineDate, this.modal.deadlineTime),
                             status: this.modal.status,
+                            tags: this.modal.tags,
                         }, this.getAuthConfig());
 
                         this.modal.open = false;
-                        await this.loadActivities();
+
+                        const newActivity = res.data;
+                        if (!this.activities[newActivity.status].find(a => a.id === newActivity.id)) {
+                            this.activities[newActivity.status].push(newActivity);
+                        }
+
+                        const orderedIds = this.activities[newActivity.status].map(a => a.id);
+                        await axios.post(`${API_BASE}/activities/reorder`, {
+                            new_status: newActivity.status,
+                            ordered_ids: orderedIds
+                        }, this.getAuthConfig());
+
+                        await this.loadActivities(false);
                         this.showToast('Activity created');
                     } catch (e) {
                         this.showToast('Error creating activity');
@@ -530,9 +691,10 @@
                             deadline: this.getDeadline(this.editModal.deadlineDate, this.editModal.deadlineTime),
                             reflection_text: this.editModal.reflection_text || null,
                             time_spent_minutes: this.editModal.time_spent_minutes ? parseInt(this.editModal.time_spent_minutes) : null,
+                            tags: this.editModal.tags,
                         }, this.getAuthConfig());
                         this.editModal.open = false;
-                        await this.loadActivities();
+                        await this.loadActivities(false);
                         this.showToast('Updated successfully');
                     } catch (e) {
                         this.showToast('Error updating activity');
@@ -549,7 +711,7 @@
                             time_spent_minutes: parseInt(this.completeModal.time_spent) || null,
                         }, this.getAuthConfig());
                         this.completeModal.open = false;
-                        await this.loadActivities();
+                        await this.loadActivities(false);
                         this.showToast('Activity completed');
                     } catch (e) {
                         this.showToast('Error completing activity');
@@ -561,7 +723,7 @@
                     try {
                         await axios.delete(`${API_BASE}/activities/${activity.id}`, this.getAuthConfig());
                         this.editModal.open = false;
-                        await this.loadActivities();
+                        await this.loadActivities(false);
                         this.showToast('Activity deleted');
                     } catch (e) {
                         this.showToast('Error deleting activity');
