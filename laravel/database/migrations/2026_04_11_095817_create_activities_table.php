@@ -23,7 +23,7 @@ return new class extends Migration
             $table->unsignedInteger('time_spent_minutes')->nullable();
 
             $table->enum('status', ['backlog', 'today', 'in_process', 'on_reflection', 'done'])
-                  ->default('backlog');
+                ->default('backlog');
 
             $table->boolean('is_project')->default(false);
             $table->boolean('is_on_board')->default(false);

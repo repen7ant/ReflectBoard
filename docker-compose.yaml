@@ -12,6 +12,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
     healthcheck:
       test:
         [
@@ -63,8 +64,10 @@ services:
     restart: unless-stopped
     volumes:
       - ./laravel:/var/www/html
-    command: sh -c "composer install --no-interaction && php artisan migrate --force && chown -R www-data:www-data storage bootstrap/cache && chmod -R 775 storage bootstrap/cache && php-fpm"
-    env_file: ./laravel/.env
+    command:
+      sh -c "composer install --no-interaction && php artisan migrate --force
+      && chown -R www-data:www-data storage bootstrap/cache && chmod -R 775
+      storage bootstrap/cache && php-fpm"
     depends_on:
       db:
         condition: service_healthy

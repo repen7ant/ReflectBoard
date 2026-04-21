@@ -1,0 +1,125 @@
+name: CI Pipeline (Laravel & FastAPI)
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+jobs:
+  laravel-tests:
+    name: Laravel Tests & Lint
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: reflectboard_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping" --health-interval=10s
+          --health-timeout=5s --health-retries=3
+
+    defaults:
+      run:
+        working-directory: ./laravel
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          tools: composer:v2
+          coverage: none
+
+      - name: Install Composer dependencies
+        run:
+          composer install -q --no-ansi --no-interaction --no-scripts --no-progress
+          --prefer-dist
+
+      - name: Prepare Laravel environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build frontend assets (Vite)
+        run: |
+          npm install
+          npm run build
+
+      - name: Check code style (Laravel Pint)
+        run: ./vendor/bin/pint --test
+
+      - name: Run tests (PHPUnit)
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: reflectboard_test
+          DB_USERNAME: root
+          DB_PASSWORD: root
+        run: php artisan test
+
+  fastapi-tests:
+    name: FastAPI Tests & Lint
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: reflectboard_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping" --health-interval=10s
+          --health-timeout=5s --health-retries=3
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+
+    defaults:
+      run:
+        working-directory: ./fastapi
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Install Python (via uv)
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Check code (Ruff)
+        run: uv run ruff check .
+
+      - name: Check types (MyPy)
+        run: uv run mypy .
+
+      - name: Run tests (Pytest)
+        env:
+          REDIS_URL: redis://localhost:6379
+          TEST_DATABASE_URL: mysql+aiomysql://root:root@127.0.0.1:3306/reflectboard_test
+          DATABASE_URL: mysql+aiomysql://root:root@127.0.0.1:3306/reflectboard_test
+          ALLOWED_ORIGINS: "http://localhost:5173"
+        run: uv run pytest

@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
-use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Str;
+use Laravel\Socialite\Facades\Socialite;
 
 class GitHubController extends Controller
 {
@@ -24,7 +24,7 @@ class GitHubController extends Controller
         ], [
             'github_id' => $githubUser->id,
             // Если юзер создается впервые, даем ему случайный пароль для безопасности
-            'password' => bcrypt(Str::random(24))
+            'password' => bcrypt(Str::random(24)),
         ]);
 
         Auth::login($user);

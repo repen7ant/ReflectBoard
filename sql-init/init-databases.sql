@@ -1,0 +1,3 @@
+CREATE DATABASE IF NOT EXISTS `reflectboard`;
+CREATE DATABASE IF NOT EXISTS `reflectboard_test`;
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';
