@@ -39,13 +39,24 @@ jobs:
           coverage: none
 
       - name: Install Composer dependencies
-        run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress
+        run:
+          composer install -q --no-ansi --no-interaction --no-scripts --no-progress
           --prefer-dist
 
       - name: Prepare Laravel environment
         run: |
           cp .env.example .env
           php artisan key:generate
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build frontend assets (Vite)
+        run: |
+          npm install
+          npm run build
 
       - name: Check code style (Laravel Pint)
         run: ./vendor/bin/pint --test
