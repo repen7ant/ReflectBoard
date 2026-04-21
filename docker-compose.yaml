@@ -64,10 +64,10 @@ services:
     restart: unless-stopped
     volumes:
       - ./laravel:/var/www/html
-    command: sh -c "composer install --no-interaction && php artisan migrate --force
+    command:
+      sh -c "composer install --no-interaction && php artisan migrate --force
       && chown -R www-data:www-data storage bootstrap/cache && chmod -R 775
       storage bootstrap/cache && php-fpm"
-    env_file: ./laravel/.env
     depends_on:
       db:
         condition: service_healthy
