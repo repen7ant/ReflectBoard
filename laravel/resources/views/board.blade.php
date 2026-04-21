@@ -465,11 +465,13 @@
                         Object.keys(this.activities).forEach(status => {
                             this.activities[status] = this.activities[status].filter(a => a.id !== item.id);
                         });
+                    } else if (action === 'reorder') {
+                        this.loadActivities(false);
                     }
                 },
 
-                async loadActivities() {
-                    this.loading = true;
+                async loadActivities(showSpinner = true) {
+                    if (showSpinner) this.loading = true;
                     try {
                         const res = await axios.get(`${API_BASE}/activities`, this.getAuthConfig());
                         const all = res.data;
@@ -482,7 +484,7 @@
                     } catch (e) {
                         this.showToast('Error loading activities');
                     } finally {
-                        this.loading = false;
+                        if (showSpinner) this.loading = false;
                     }
                 },
 
@@ -517,26 +519,34 @@
                                 const activityId = parseInt(evt.item.dataset.id);
                                 const oldStatus = evt.from.dataset.status;
                                 const newStatus = evt.to.dataset.status;
+                                const oldIndex = evt.oldIndex;
+                                const newIndex = evt.newIndex;
 
                                 evt.item.remove();
-                                if (evt.oldIndex !== undefined) {
-                                    evt.from.insertBefore(evt.item, evt.from.children[evt.oldIndex]);
+                                if (oldIndex !== undefined) {
+                                    evt.from.insertBefore(evt.item, evt.from.children[oldIndex]);
                                 }
 
-                                if (oldStatus === newStatus) return;
+                                if (oldStatus === newStatus && oldIndex === newIndex) return;
 
                                 const taskIndex = this.activities[oldStatus].findIndex(a => a.id === activityId);
                                 if (taskIndex > -1) {
                                     const [task] = this.activities[oldStatus].splice(taskIndex, 1);
                                     task.status = newStatus;
-                                    this.activities[newStatus].splice(evt.newIndex, 0, task);
+                                    this.activities[newStatus].splice(newIndex, 0, task);
                                 }
 
+                                const orderedIds = this.activities[newStatus].map(a => a.id);
+
                                 try {
-                                    await axios.patch(`${API_BASE}/activities/${activityId}`, { status: newStatus }, this.getAuthConfig());
+                                    await axios.post(`${API_BASE}/activities/reorder`, {
+                                        activity_id: activityId,
+                                        new_status: newStatus,
+                                        ordered_ids: orderedIds
+                                    }, this.getAuthConfig());
                                 } catch (e) {
                                     this.showToast('Error moving activity');
-                                    await this.loadActivities();
+                                    await this.loadActivities(false);
                                 }
                             }
                         });
@@ -642,7 +652,7 @@
                 async createActivity() {
                     if (!this.modal.title.trim()) return;
                     try {
-                        await axios.post(`${API_BASE}/activities`, {
+                        const res = await axios.post(`${API_BASE}/activities`, {
                             title: this.modal.title.trim(),
                             description: this.modal.description || null,
                             category_id: this.modal.category_id || null,
@@ -652,7 +662,19 @@
                         }, this.getAuthConfig());
 
                         this.modal.open = false;
-                        await this.loadActivities();
+
+                        const newActivity = res.data;
+                        if (!this.activities[newActivity.status].find(a => a.id === newActivity.id)) {
+                            this.activities[newActivity.status].push(newActivity);
+                        }
+
+                        const orderedIds = this.activities[newActivity.status].map(a => a.id);
+                        await axios.post(`${API_BASE}/activities/reorder`, {
+                            new_status: newActivity.status,
+                            ordered_ids: orderedIds
+                        }, this.getAuthConfig());
+
+                        await this.loadActivities(false);
                         this.showToast('Activity created');
                     } catch (e) {
                         this.showToast('Error creating activity');
@@ -672,7 +694,7 @@
                             tags: this.editModal.tags,
                         }, this.getAuthConfig());
                         this.editModal.open = false;
-                        await this.loadActivities();
+                        await this.loadActivities(false);
                         this.showToast('Updated successfully');
                     } catch (e) {
                         this.showToast('Error updating activity');
@@ -689,7 +711,7 @@
                             time_spent_minutes: parseInt(this.completeModal.time_spent) || null,
                         }, this.getAuthConfig());
                         this.completeModal.open = false;
-                        await this.loadActivities();
+                        await this.loadActivities(false);
                         this.showToast('Activity completed');
                     } catch (e) {
                         this.showToast('Error completing activity');
@@ -701,7 +723,7 @@
                     try {
                         await axios.delete(`${API_BASE}/activities/${activity.id}`, this.getAuthConfig());
                         this.editModal.open = false;
-                        await this.loadActivities();
+                        await this.loadActivities(false);
                         this.showToast('Activity deleted');
                     } catch (e) {
                         this.showToast('Error deleting activity');

@@ -76,3 +76,27 @@ async def update_activity(
     await redis_client.publish(f"board:{current_user.id}", payload)
 
     return activity
+
+
+@router.post("/activities/reorder")
+async def reorder_activities(
+    data: dict,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    activity_id = data.get("activity_id")
+    new_status = data.get("new_status")
+    ordered_ids = data.get("ordered_ids", [])
+
+    await ActivityService.reorder_activities(
+        db=db,
+        user_id=current_user.id,
+        activity_id=activity_id,
+        new_status=new_status,
+        ordered_ids=ordered_ids,
+    )
+
+    payload = json.dumps({"action": "reorder", "data": {}})
+    await redis_client.publish(f"board:{current_user.id}", payload)
+
+    return {"success": True}

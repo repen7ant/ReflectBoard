@@ -1,6 +1,6 @@
 from app.models.activity import Activity, Status
 from app.schemas.activity import ActivityCreate
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -17,6 +17,7 @@ class ActivityService:
             select(Activity)
             .options(selectinload(Activity.category))
             .where(Activity.user_id == user_id)
+            .order_by(Activity.position.asc())
         )
 
         if status:
@@ -84,3 +85,25 @@ class ActivityService:
         await db.commit()
         await db.refresh(activity)
         return activity
+
+    @staticmethod
+    async def reorder_activities(
+        db: AsyncSession,
+        user_id: int,
+        activity_id: int | None,
+        new_status: str | None,
+        ordered_ids: list[int],
+    ) -> None:
+
+        if activity_id and new_status:
+            await ActivityService.update_activity(
+                db, activity_id, user_id, {"status": new_status}
+            )
+
+        for index, act_id in enumerate(ordered_ids):
+            await db.execute(
+                update(Activity)
+                .where(Activity.id == act_id, Activity.user_id == user_id)
+                .values(position=index)
+            )
+        await db.commit()
