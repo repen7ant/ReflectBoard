@@ -29,7 +29,4 @@ Route::middleware('auth')->group(function () {
     Route::get('/analytics', fn() => view('analytics'))->name('analytics');
 });
 
-Route::get('/login', fn() => 'login page coming soon')->name('login');
-Route::get('/register', fn() => 'register page coming soon')->name('register');
-
 require __DIR__.'/auth.php';
