@@ -252,6 +252,7 @@
                     open: false,
                     activity: null,
                 },
+                ws: null,
 
                 async init() {
                     const token = document.querySelector('meta[name="api-token"]')?.content;
@@ -262,6 +263,43 @@
 
                     await this.loadCategories();
                     this.setDatePreset('30days');
+                    this.initWs(token);
+                },
+
+                initWs(token) {
+                    const url = new URL(API_BASE);
+                    const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+                    const wsUrl = `${wsProtocol}//${url.host}/api/v1/ws?token=${token}`;
+
+                    this.ws = new WebSocket(wsUrl);
+
+                    this.ws.onmessage = (event) => {
+                        const payload = JSON.parse(event.data);
+                        this.handleRemoteUpdate(payload);
+                    };
+
+                    this.ws.onclose = () => {
+                        console.log("WebSocket disconnected. Auto-reconnect in 3s...");
+                        setTimeout(() => this.initWs(token), 3000);
+                    };
+                },
+
+                handleRemoteUpdate(payload) {
+                    const action = payload.action;
+                    const item = payload.data;
+
+                    if (action === 'update' && item.status === 'done') {
+                        const index = this.activities.findIndex(a => a.id === item.id);
+                        if (index !== -1) {
+                            this.activities[index] = item;
+                        } else {
+                            this.activities.unshift(item);
+                        }
+                    } else if (action === 'delete') {
+                        this.activities = this.activities.filter(a => a.id !== item.id);
+                    } else if (action === 'reorder' || action === 'create') {
+                        this.applyFilters();
+                    }
                 },
 
                 getAuthConfig() {
