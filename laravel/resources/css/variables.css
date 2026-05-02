@@ -25,7 +25,7 @@ html {
 body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'Geist Mono', monospace;
+    font-family: 'JetBrainsMono Nerd Font', monospace;
     min-height: 100vh;
     font-size: 1rem;
 }
