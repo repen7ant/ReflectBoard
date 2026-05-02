@@ -4,7 +4,6 @@ import enum
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from app.db.session import Base
 from sqlalchemy import (
     JSON,
     Boolean,
@@ -17,6 +16,8 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.db.session import Base
 
 if TYPE_CHECKING:
     from app.models.category import Category
@@ -42,6 +43,8 @@ class Activity(Base):
     category_id: Mapped[int | None] = mapped_column(
         ForeignKey("categories.id"), nullable=True
     )
+    category_snapshot_name = mapped_column(String, nullable=True)
+    category_snapshot_color = mapped_column(String, nullable=True)
 
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)

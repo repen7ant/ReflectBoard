@@ -84,6 +84,9 @@ class ActivityService:
 
         if update_data.get("status") == Status.done:
             activity.completed_at = func.now()
+            if activity.category:
+                activity.category_snapshot_name = activity.category.name
+                activity.category_snapshot_color = activity.category.color
 
         await db.commit()
         await db.refresh(activity)

@@ -15,6 +15,7 @@ class Activity extends Model
         'reflection_text', 'time_spent_minutes', 'status',
         'is_project', 'is_on_board', 'is_quick_capture',
         'deadline', 'tags', 'completed_at', 'position',
+        'category_snapshot_name', 'category_snapshot_color',
     ];
 
     protected $casts = [

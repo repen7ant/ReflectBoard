@@ -151,10 +151,10 @@
                         <div class="activity-header">
                             <div style="flex: 1;">
                                 <div class="activity-title-large" x-text="activity.title"></div>
-                                <template x-if="activity.category">
+                                <template x-if="activity.category || activity.category_snapshot_name">
                                     <div class="card-category" style="margin-top: 0.5rem;">
-                                        <div class="category-dot" :style="'background:' + activity.category.color"></div>
-                                        <span x-text="activity.category.name"></span>
+                                        <div class="category-dot" :style="'background:' + (activity.category?.color ?? activity.category_snapshot_color)"></div>
+                                        <span x-text="activity.category?.name ?? activity.category_snapshot_name"></span>
                                     </div>
                                 </template>
                                 <div x-show="activity.tags && activity.tags.length > 0" class="tags-container">
@@ -191,10 +191,10 @@
                 <div class="modal-header">
                     <div style="flex: 1;">
                         <div class="modal-activity-title" x-text="detailModal.activity?.title"></div>
-                        <template x-if="detailModal.activity?.category">
+                        <template x-if="detailModal.activity?.category || detailModal.activity?.category_snapshot_name">
                             <div class="card-category" style="margin-top: 0.5rem;">
-                                <div class="category-dot" :style="'background:' + detailModal.activity.category.color"></div>
-                                <span x-text="detailModal.activity.category.name"></span>
+                                <div class="category-dot" :style="'background:' + (detailModal.activity.category?.color ?? detailModal.activity.category_snapshot_color)"></div>
+                                <span x-text="detailModal.activity.category?.name ?? detailModal.activity.category_snapshot_name"></span>
                             </div>
                         </template>
                     </div>

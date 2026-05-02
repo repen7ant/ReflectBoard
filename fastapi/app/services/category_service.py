@@ -1,7 +1,9 @@
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.activity import Activity
 from app.models.category import Category
 from app.schemas.category import CategoryCreate, CategoryOut
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class CategoryService:
@@ -32,6 +34,16 @@ class CategoryService:
         category = result.scalar_one_or_none()
         if not category:
             return False
+
+        await db.execute(
+            update(Activity)
+            .where(Activity.category_id == category_id)
+            .values(
+                category_snapshot_name=category.name,
+                category_snapshot_color=category.color,
+                category_id=None,
+            )
+        )
 
         await db.delete(category)
         await db.commit()
