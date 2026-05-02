@@ -40,7 +40,7 @@
                     <input
                         type="text"
                         class="filter-input"
-                        placeholder="Search by title or reflection..."
+                        placeholder="Search by title, reflection or #tag..."
                         x-model="filters.search"
                         @input.debounce.300ms="applyFilters()"
                     >
@@ -157,11 +157,21 @@
                                         <span x-text="activity.category.name"></span>
                                     </div>
                                 </template>
+                                <div x-show="activity.tags && activity.tags.length > 0" class="tags-container">
+                                    <template x-for="tag in (activity.tags || [])" :key="tag">
+                                        <span class="tag-badge">
+                                            #<span x-text="tag"></span>
+                                        </span>
+                                    </template>
+                                </div>
                             </div>
                             <div class="activity-meta">
                                 <div class="activity-date" x-text="formatDate(activity.completed_at)"></div>
                                 <template x-if="activity.time_spent_minutes">
                                     <div class="activity-time" x-text="formatTime(activity.time_spent_minutes)"></div>
+                                </template>
+                                <template x-if="activity.deadline">
+                                    <div class="activity-deadline" x-text="'Due: ' + formatDate(activity.deadline)"></div>
                                 </template>
                             </div>
                         </div>

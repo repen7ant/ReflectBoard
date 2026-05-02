@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import func, or_, select, update
+from sqlalchemy import String, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -128,13 +128,19 @@ class ActivityService:
         )
 
         if search:
-            search_pattern = f"%{search}%"
-            query = query.where(
-                or_(
-                    Activity.title.ilike(search_pattern),
-                    Activity.reflection_text.ilike(search_pattern),
+            if search.startswith("#"):
+                tag = search[1:].strip()
+                if tag:
+                    tag_pattern = f'%"{tag}"%'
+                    query = query.where(Activity.tags.cast(String).ilike(tag_pattern))
+            else:
+                search_pattern = f"%{search}%"
+                query = query.where(
+                    or_(
+                        Activity.title.ilike(search_pattern),
+                        Activity.reflection_text.ilike(search_pattern),
+                    )
                 )
-            )
 
         if date_from:
             query = query.where(Activity.completed_at >= date_from)
