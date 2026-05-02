@@ -226,7 +226,8 @@
                     </div>
                 </template>
 
-                <div class="modal-actions">
+                <div class="modal-actions modal-actions-spaced">
+                    <button class="btn btn-danger" @click="deleteActivity(detailModal.activity); detailModal.open = false">Delete</button>
                     <button class="btn btn-ghost" @click="detailModal.open = false">Close</button>
                 </div>
             </div>
@@ -423,6 +424,18 @@
                 openDetailModal(activity) {
                     this.detailModal.activity = activity;
                     this.detailModal.open = true;
+                },
+
+                async deleteActivity(activity) {
+                    if (!confirm(`Delete "${activity.title}"?`)) return;
+
+                    try {
+                        await axios.delete(`${API_BASE}/activities/${activity.id}`, this.getAuthConfig());
+                        this.activities = this.activities.filter(a => a.id !== activity.id);
+                    } catch (e) {
+                        console.error('Error deleting activity', e);
+                        alert('Failed to delete activity');
+                    }
                 },
             };
         }

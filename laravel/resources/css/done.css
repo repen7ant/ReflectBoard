@@ -145,13 +145,14 @@
     border: 1px solid var(--border);
     border-radius: 0.5rem;
     padding: 1.25rem;
-    cursor: pointer;
     transition: all 0.15s;
+    position: relative;
 }
 
 .activity-item:hover {
     border-color: var(--accent);
     box-shadow: 0 0.25rem 1rem rgba(0,0,0,0.35);
+    cursor: pointer;
 }
 
 .activity-header {
