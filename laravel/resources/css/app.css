@@ -3,3 +3,12 @@
 @import 'components.css';
 @import 'auth.css';
 @import 'landing.css';
+@import 'done.css';
+
+@font-face {
+    font-family: 'JetBrainsMono NF';
+    src: url('/fonts/JetBrainsMonoNF-Regular.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}

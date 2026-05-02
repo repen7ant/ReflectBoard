@@ -1,8 +1,11 @@
-from app.models.activity import Activity, Status
-from app.schemas.activity import ActivityCreate
-from sqlalchemy import func, select, update
+from datetime import date
+
+from sqlalchemy import String, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+
+from app.models.activity import Activity, Status
+from app.schemas.activity import ActivityCreate
 
 
 class ActivityService:
@@ -81,6 +84,9 @@ class ActivityService:
 
         if update_data.get("status") == Status.done:
             activity.completed_at = func.now()
+            if activity.category:
+                activity.category_snapshot_name = activity.category.name
+                activity.category_snapshot_color = activity.category.color
 
         await db.commit()
         await db.refresh(activity)
@@ -107,3 +113,49 @@ class ActivityService:
                 .values(position=index)
             )
         await db.commit()
+
+    @staticmethod
+    async def get_done_activities(
+        db: AsyncSession,
+        user_id: int,
+        search: str | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        category_id: int | None = None,
+    ):
+        query = (
+            select(Activity)
+            .options(selectinload(Activity.category))
+            .where(Activity.user_id == user_id, Activity.status == Status.done)
+            .order_by(Activity.completed_at.desc())
+        )
+
+        if search:
+            if search.startswith("#"):
+                tag = search[1:].strip()
+                if tag:
+                    tag_pattern = f'%"{tag}"%'
+                    query = query.where(Activity.tags.cast(String).ilike(tag_pattern))
+            else:
+                search_pattern = f"%{search}%"
+                query = query.where(
+                    or_(
+                        Activity.title.ilike(search_pattern),
+                        Activity.reflection_text.ilike(search_pattern),
+                    )
+                )
+
+        if date_from:
+            query = query.where(Activity.completed_at >= date_from)
+
+        if date_to:
+            from datetime import datetime
+
+            date_to_end = datetime.combine(date_to, datetime.max.time())
+            query = query.where(Activity.completed_at <= date_to_end)
+
+        if category_id:
+            query = query.where(Activity.category_id == category_id)
+
+        result = await db.execute(query)
+        return result.scalars().all()

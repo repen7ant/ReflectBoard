@@ -14,12 +14,11 @@ RUN apk add --no-cache \
     libzip-dev \
     zip \
     unzip \
-    autoconf \
-    g++ \
-    make \
-    && docker-php-ext-install pdo_mysql gd zip bcmath opcache \
+    $PHPIZE_DEPS \
     && pecl install redis \
-    && docker-php-ext-enable redis
+    && docker-php-ext-install pdo_mysql gd zip bcmath opcache \
+    && docker-php-ext-enable redis \
+    && apk del $PHPIZE_DEPS
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 

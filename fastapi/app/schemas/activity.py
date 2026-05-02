@@ -1,7 +1,8 @@
 from datetime import datetime
 
-from app.models.activity import Status
 from pydantic import BaseModel, ConfigDict, Field
+
+from app.models.activity import Status
 
 from .category import CategoryOut
 
@@ -11,6 +12,8 @@ class ActivityOut(BaseModel):
     user_id: int
     parent_id: int | None
     category_id: int | None
+    category_snapshot_name: str | None = None
+    category_snapshot_color: str | None = None
     title: str
     description: str | None
     reflection_text: str | None

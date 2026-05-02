@@ -12,8 +12,6 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -21,7 +19,7 @@
 
     <!-- Topbar -->
     <nav class="topbar">
-        <div style="margin-right: auto;">
+        <div class="topbar-logo">
             <a href="/">
                 <img src="/icon.svg" alt="ReflectBoard" class="logo-icon">
             </a>
@@ -48,7 +46,7 @@
                         :data-status="col.status"
                     >
                         <template x-if="loading">
-                            <div style="display:flex;justify-content:center;padding:1.5rem;">
+                            <div class="loading-center">
                                 <div class="spinner"></div>
                             </div>
                         </template>
@@ -69,13 +67,13 @@
 
                                     <template x-if="activity.category">
                                         <div class="card-category">
-                                            <div class="category-dot" :style="'background:' + activity.category.color"></div>
+                                            <div class="category-dot--sm" :style="'background:' + activity.category.color"></div>
                                             <span x-text="activity.category.name"></span>
                                         </div>
                                     </template>
-                                    <div x-show="activity.tags && activity.tags.length > 0" style="display: flex; gap: 0.25rem; flex-wrap: wrap; margin-top: 0.25rem;">
+                                    <div x-show="activity.tags && activity.tags.length > 0" class="tags-container">
                                         <template x-for="tag in (activity.tags || [])" :key="tag">
-                                            <span style="font-size: 0.7rem; color: #957fb8; background: rgba(149, 127, 184, 0.1); padding: 0.1rem 0.4rem; border-radius: 0.25rem;">
+                                            <span class="tag-badge">
                                                 #<span x-text="tag"></span>
                                             </span>
                                         </template>
@@ -93,7 +91,7 @@
                     </div>
 
                     <template x-if="col.status !== 'on_reflection'">
-                        <div style="padding: 0 0.625rem 0.625rem;">
+                        <div class="column-footer">
                             <button class="add-btn" @click.stop="openCreateModal(col.status)">+ add</button>
                         </div>
                     </template>
@@ -137,20 +135,19 @@
                     <button
                         type="button"
                         @click="openCreateCategoryModal()"
-                        class="btn btn-ghost"
-                        style="width: 100%; font-size: 0.875rem; justify-content: center;">
+                        class="btn btn-ghost btn-full">
                         + New category
                     </button>
                 </div>
 
                 <div class="field" x-data="{ newTag: '' }">
                     <label>Tags</label>
-                    <div style="display: flex; flex-wrap: wrap; gap: 0.375rem; padding: 0.375rem 0.5rem; border: 1px solid var(--border); border-radius: 0.375rem; background: var(--bg); min-height: 2.75rem; align-items: center;">
+                    <div class="tag-input-wrapper">
 
                         <template x-for="(tag, index) in modal.tags" :key="index">
-                            <span style="font-size: 1rem; font-weight: 500; color: #fff; background: #957fb8; padding: 0.15rem 0.5rem; border-radius: 9999px; display: inline-flex; align-items: center; gap: 0.25rem;">
+                            <span class="tag-pill">
                                 <span x-text="'#' + tag"></span>
-                                <button type="button" @click="modal.tags.splice(index, 1)" style="opacity: 0.8; cursor: pointer;">&times;</button>
+                                <button type="button" @click="modal.tags.splice(index, 1)" class="tag-pill-remove">&times;</button>
                             </span>
                         </template>
 
@@ -161,16 +158,16 @@
                             @keydown.space.prevent="if(newTag.trim()){ modal.tags.push(newTag.replace(/^#/, '').trim()); newTag = ''; }"
                             @keydown.enter.prevent="if(newTag.trim()){ modal.tags.push(newTag.replace(/^#/, '').trim()); newTag = ''; }"
                             @keydown.backspace="if(newTag === '' && modal.tags.length > 0){ modal.tags.pop(); }"
-                            style="border: none; outline: none; background: transparent; flex: 1; min-width: 100px; padding: 0; box-shadow: none;"
+                            class="tag-input"
                         >
                     </div>
                 </div>
 
                 <div class="field">
                     <label>Deadline</label>
-                    <div style="display:flex;gap:0.5rem;">
-                        <input type="date" x-model="modal.deadlineDate" style="flex:1;">
-                        <input type="time" x-model="modal.deadlineTime" style="width:9rem;">
+                    <div class="deadline-inputs">
+                        <input type="date" x-model="modal.deadlineDate" class="deadline-date">
+                        <input type="time" x-model="modal.deadlineTime" class="deadline-time">
                     </div>
                 </div>
 
@@ -186,8 +183,8 @@
     <template x-if="editModal.open">
         <div class="modal-overlay" @click.self="editModal.open = false">
             <div class="modal">
-                <div class="modal-header" style="display:flex; justify-content:center;">
-                    <div style="text-align:center;">
+                <div class="modal-header modal-header-center">
+                    <div class="modal-header-content">
                         <div class="detail-label">Created</div>
                         <div class="detail-value" x-text="formatDate(editModal.activity?.created_at, true)"></div>
                     </div>
@@ -223,20 +220,19 @@
                     <button
                         type="button"
                         @click="openCreateCategoryModal()"
-                        class="btn btn-ghost"
-                        style="width: 100%; font-size: 0.875rem; justify-content: center;">
+                        class="btn btn-ghost btn-full">
                         + New category
                     </button>
                 </div>
 
                 <div class="field" x-data="{ newTag: '' }">
                     <label>Tags</label>
-                    <div style="display: flex; flex-wrap: wrap; gap: 0.375rem; padding: 0.375rem 0.5rem; border: 1px solid var(--border); border-radius: 0.375rem; background: var(--bg); min-height: 2.75rem; align-items: center;">
+                    <div class="tag-input-wrapper">
 
                         <template x-for="(tag, index) in editModal.tags" :key="index">
-                            <span style="font-size: 1rem; font-weight: 500; color: #fff; background: #957fb8; padding: 0.15rem 0.5rem; border-radius: 9999px; display: inline-flex; align-items: center; gap: 0.25rem;">
+                            <span class="tag-pill">
                                 <span x-text="'#' + tag"></span>
-                                <button type="button" @click="editModal.tags.splice(index, 1)" style="opacity: 0.8; cursor: pointer;">&times;</button>
+                                <button type="button" @click="editModal.tags.splice(index, 1)" class="tag-pill-remove">&times;</button>
                             </span>
                         </template>
 
@@ -247,22 +243,22 @@
                             @keydown.space.prevent="if(newTag.trim()){ editModal.tags.push(newTag.replace(/^#/, '').trim()); newTag = ''; }"
                             @keydown.enter.prevent="if(newTag.trim()){ editModal.tags.push(newTag.replace(/^#/, '').trim()); newTag = ''; }"
                             @keydown.backspace="if(newTag === '' && editModal.tags.length > 0){ editModal.tags.pop(); }"
-                            style="border: none; outline: none; background: transparent; flex: 1; min-width: 100px; padding: 0; box-shadow: none;"
+                            class="tag-input"
                         >
                     </div>
                 </div>
 
                 <div class="field">
                     <label>Deadline</label>
-                    <div style="display:flex;gap:0.5rem;">
-                        <input type="date" x-model="editModal.deadlineDate" style="flex:1;">
-                        <input type="time" x-model="editModal.deadlineTime" style="width:9rem;">
+                    <div class="deadline-inputs">
+                        <input type="date" x-model="editModal.deadlineDate" class="deadline-date">
+                        <input type="time" x-model="editModal.deadlineTime" class="deadline-time">
                     </div>
                 </div>
 
-                <div class="modal-actions" style="justify-content: space-between; margin-top: 1.5rem;">
+                <div class="modal-actions modal-actions-spaced">
                     <button class="btn btn-danger" @click="deleteActivity(editModal.activity)">Delete</button>
-                    <div style="display:flex; gap:0.5rem;">
+                    <div class="modal-actions-group">
                         <button class="btn btn-ghost" @click="editModal.open = false">Cancel</button>
                         <button class="btn btn-primary" @click="saveActivity()">Save Changes</button>
                     </div>
@@ -276,7 +272,7 @@
         <div class="modal-overlay" @click.self="completeModal.open = false">
             <div class="modal">
                 <div class="modal-title">Complete Task</div>
-                <div class="modal-activity-title" style="margin-bottom: 1.25rem;" x-text="completeModal.activity?.title"></div>
+                <div class="modal-activity-title modal-activity-title-spaced" x-text="completeModal.activity?.title"></div>
 
                 <div class="field">
                     <label>Time spent in mins (optional)</label>
@@ -292,11 +288,10 @@
                     ></textarea>
                 </div>
 
-                <div class="modal-actions" style="justify-content: space-between;">
+                <div class="modal-actions modal-actions-spaced">
                     <button class="btn btn-ghost" @click="completeModal.open = false">Cancel</button>
                     <button
-                        class="btn btn-primary"
-                        style="background: #98bb6c; color: var(--bg);"
+                        class="btn btn-primary btn-success"
                         @click="completeActivity()"
                     >Complete</button>
                 </div>
@@ -307,7 +302,7 @@
     <!-- Modal: creating new category -->
     <template x-if="categoryModal.open">
         <div class="modal-overlay" @click.self="categoryModal.open = false">
-            <div class="modal" style="max-width: 26rem;">
+            <div class="modal modal-narrow">
                 <div class="modal-title">New Category</div>
 
                 <div class="field">
@@ -317,7 +312,7 @@
 
                 <div class="field">
                     <label>Color</label>
-                    <input type="color" x-model="categoryModal.color" style="height: 2.75rem; width: 100%; padding: 0.25rem; border: 1px solid var(--border); border-radius: 0.375rem;">
+                    <input type="color" x-model="categoryModal.color" class="color-input">
                 </div>
 
                 <div class="modal-actions">
