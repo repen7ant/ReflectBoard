@@ -15,26 +15,26 @@
     <div class="landing-wrapper">
         <div class="glow-bg"></div>
 
-        <nav class="topbar" style="position: relative; border-bottom: none; background: transparent;">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <nav class="topbar landing-topbar">
+            <div class="landing-logo">
                 <img src="/icon.svg" alt="Logo" class="logo-icon">
-                <span style="font-weight: 500; text-transform: uppercase; letter-spacing: 0.15em; font-size: 0.875rem; color: var(--text-muted);">
+                <span class="landing-logo-text">
                     ReflectBoard
                 </span>
             </div>
 
-            <div style="display: flex; gap: 0.75rem; margin-left: auto; align-items: center;">
+            <div class="landing-actions">
                 @auth
-                    <a href="{{ route('board') }}" class="btn btn-primary" style="text-decoration: none;">Board</a>
+                    <a href="{{ route('board') }}" class="btn btn-primary btn-link">Board</a>
 
-                    <form method="POST" action="{{ route('logout') }}" style="margin: 0; display: flex;">
+                    <form method="POST" action="{{ route('logout') }}" class="landing-logout-form">
                         @csrf
-                        <button type="submit" class="btn btn-ghost" style="font-size: 0.875rem;">
+                        <button type="submit" class="btn btn-ghost">
                             Log out
                         </button>
                     </form>
                 @else
-                    <a href="{{ route('login') }}" class="btn btn-ghost" style="text-decoration: none;">Log in</a>
+                    <a href="{{ route('login') }}" class="btn btn-ghost btn-link">Log in</a>
                 @endauth
             </div>
         </nav>
