@@ -1,4 +1,5 @@
 import json
+from datetime import date
 
 from app.db.redis import redis_client
 from app.db.session import get_db
@@ -10,7 +11,7 @@ from app.services.activity_service import ActivityService
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 router = APIRouter(prefix="/api/v1", tags=["Activities"])
 
@@ -100,3 +101,17 @@ async def reorder_activities(
     await redis_client.publish(f"board:{current_user.id}", payload)
 
     return {"success": True}
+
+
+@router.get("/activities/done", response_model=list[ActivityOut])
+async def get_done_activities(
+    db: AsyncSession = Depends(get_db),
+    search: str | None = Query(None),
+    date_from: date | None = Query(None),
+    date_to: date | None = Query(None),
+    category_id: int | None = Query(None),
+    current_user: User = Depends(get_current_user),
+):
+    return await ActivityService.get_done_activities(
+        db, current_user.id, search, date_from, date_to, category_id
+    )
