@@ -6,7 +6,6 @@
     <title>ReflectBoard</title>
 
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
-
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>

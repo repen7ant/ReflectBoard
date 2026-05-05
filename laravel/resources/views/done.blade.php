@@ -6,9 +6,6 @@
     <meta name="api-token" content="{{ auth()->check() ? auth()->user()->api_token : '' }}">
     <title>Done — ReflectBoard</title>
 
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
