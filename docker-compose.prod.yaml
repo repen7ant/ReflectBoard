@@ -64,21 +64,7 @@ services:
       - "9000"
     volumes:
       - laravel_public:/var/www/html/public
-    environment:
-      APP_ENV: production
-      APP_DEBUG: "false"
-      APP_KEY: ${LARAVEL_APP_KEY}
-      DB_CONNECTION: mysql
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_DATABASE: ${MYSQL_DATABASE}
-      DB_USERNAME: ${MYSQL_USER}
-      DB_PASSWORD: ${MYSQL_PASSWORD}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      FASTAPI_BASE_URL: http://fastapi:8000
-      SESSION_DRIVER: redis
-      CACHE_DRIVER: redis
+    env_file: ./laravel/.env
     command: >
       sh -c "php artisan migrate --force &&
              php artisan config:cache &&

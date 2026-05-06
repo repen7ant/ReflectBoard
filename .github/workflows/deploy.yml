@@ -26,6 +26,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -35,6 +38,7 @@ jobs:
           context: ./laravel
           target: production
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: ghcr.io/${{ github.repository_owner }}/reflectboard-laravel:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -45,6 +49,7 @@ jobs:
           context: ./fastapi
           target: production
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: ghcr.io/${{ github.repository_owner }}/reflectboard-fastapi:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -68,11 +73,7 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             cd ~/reflectboard
-
             echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ secrets.SERVER_USER }} --password-stdin
-
             docker compose -f docker-compose.prod.yaml pull
             docker compose -f docker-compose.prod.yaml up -d
-
-            # Удаляем старые образы
             docker image prune -f
