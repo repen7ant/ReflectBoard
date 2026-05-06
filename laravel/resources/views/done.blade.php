@@ -232,7 +232,7 @@
     </template>
 
     <script>
-        const API_BASE = 'http://reflectboard-api.local/api/v1';
+        const API_BASE = '{{ config("services.api_base.url") }}';
 
         function donePage() {
             return {
