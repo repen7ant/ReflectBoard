@@ -14,7 +14,6 @@ storage/logs/*.log
 storage/*.key
 public/storage
 public/hot
-composer.lock
 /tests
 phpunit.xml
 .editorconfig
