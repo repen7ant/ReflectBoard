@@ -65,7 +65,8 @@ services:
       - laravel_public:/var/www/html/public
     env_file: ./laravel/.env
     command: >
-      sh -c "cp -rT /app/public/build /var/www/html/public/build &&
+      sh -c "mkdir -p /var/www/html/public/build &&
+             cp -a /app/public/build/. /var/www/html/public/build/ &&
              php artisan migrate --force &&
              php artisan config:cache &&
              php artisan route:cache &&
@@ -82,7 +83,7 @@ services:
     container_name: reflectboard-nginx
     restart: always
     ports:
-      - "8080:80"
+      - "8081:80"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - laravel_public:/var/www/html/public:ro

@@ -22,11 +22,19 @@ GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET берутся отсюда:
 https://github.com/settings/developers
 ```
 
-GITHUB_REDIRECT_URI=https://reflectboard.emrysdev.xyz/auth/github/callback
+В GITHUB_REDIRECT_URI ставим https://reflectboard.emrysdev.xyz/auth/github/callback
 
 ### В fastapi
 
 В DATABASE_URL ставим ранее указанный пароль (MYSQL_PASSWORD)
+
+## deploy.yml
+
+Так как сервер на архитектуре arm64, то для сборки используется ubuntu-24.04-arm
+
+Для сервера на x86_64 нужно заменить на закомментированный текст
+
+Подключение по ssh происходит через tailscale (подробнее про это далее).
 
 ## Секреты Github Actions
 
@@ -45,8 +53,8 @@ ssh-keygen -t ed25519 -C "github-actions" -f ~/.ssh/github_actions -N ""
 
 Создаст два файла:
 
-~/.ssh/github_actions — приватный ключ -> идёт в SERVER_SSH_KEY
-~/.ssh/github_actions.pub — публичный ключ -> копируем на сервер в .ssh/authorized_keys
+- ~/.ssh/github_actions — приватный ключ -> идёт в SERVER_SSH_KEY
+- ~/.ssh/github_actions.pub — публичный ключ -> копируем на сервер в .ssh/authorized_keys
 
 ### SERVER_USER
 
@@ -65,7 +73,9 @@ https://login.tailscale.com/admin/settings/keys
 
 IP в сети tailscale
 
-### На сервере
+## На сервере
+
+1. Создаем папки:
 
 ```bash
 mkdir ~/reflectboard
@@ -74,19 +84,19 @@ mkdir -p ~/reflectboard/laravel
 mkdir -p ~/reflectboard/nginx/conf.d
 ```
 
-Копируем .env файлы в соответсвующие папки.
+2. Копируем .env файлы в соответсвующие папки.
 
-Копируем docker-compose.prod.yaml.
+3. Копируем docker-compose.prod.yaml.
 
-Копируем prod-версию nginx-конфига (nginx/conf.d/prod.conf.disable) и переименовываем в default.conf.
+4. Копируем prod-версию nginx-конфига (nginx/conf.d/prod.conf.disable) и переименовываем в default.conf.
 
-Залогиниться в GHCR вручную (только один раз):
+5. Логинимся в GHCR вручную (только один раз):
 
 ```bash
 echo ВАШ_GHCR_TOKEN | docker login ghcr.io -u ВАШ_GITHUB_USERNAME --password-stdin
 ```
 
-Сделать запуск вручную (только в первый раз):
+6. Делаем запуск вручную (только в первый раз):
 
 ```bash
 cd ~/reflectboard
