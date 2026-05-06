@@ -38,7 +38,7 @@ jobs:
           context: ./laravel
           target: production
           push: true
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/arm64 # linux/amd64
           tags: ghcr.io/${{ github.repository_owner }}/reflectboard-laravel:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -49,7 +49,7 @@ jobs:
           context: ./fastapi
           target: production
           push: true
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/arm64 #linux/amd64
           tags: ghcr.io/${{ github.repository_owner }}/reflectboard-fastapi:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
