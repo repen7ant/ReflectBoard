@@ -21,8 +21,8 @@ services:
           "ping",
           "-h",
           "localhost",
-          "-u${MYSQL_USER}",
-          "-p${MYSQL_PASSWORD}",
+          "-u${MYSQL_USER:-reflectboard}",
+          "-p${MYSQL_PASSWORD:-reflectboard}",
         ]
       interval: 5s
       timeout: 5s
@@ -43,14 +43,15 @@ services:
       retries: 5
 
   fastapi:
-    build: ./fastapi
+    build:
+      context: ./fastapi
+      target: development
     container_name: reflectboard-fastapi
     restart: unless-stopped
     ports:
       - "8000:8000"
     volumes:
-      - ./fastapi:/app # hot-relaod
-    command: uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      - ./fastapi:/app # hot-reload
     env_file: ./fastapi/.env
     depends_on:
       db:
@@ -59,15 +60,18 @@ services:
         condition: service_healthy
 
   laravel:
-    build: ./laravel
+    build:
+      context: ./laravel
+      target: development
     container_name: reflectboard-laravel
     restart: unless-stopped
     volumes:
-      - ./laravel:/var/www/html
-    command:
-      sh -c "composer install --no-interaction && php artisan migrate --force
-      && chown -R www-data:www-data storage bootstrap/cache && chmod -R 775
-      storage bootstrap/cache && php-fpm"
+      - ./laravel:/var/www/html # hot-reload
+    command: >
+      sh -c "composer install --no-interaction &&
+             php artisan migrate --force &&
+             chown -R www-data:www-data storage bootstrap/cache &&
+             php-fpm"
     depends_on:
       db:
         condition: service_healthy
@@ -92,7 +96,6 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
       - ./laravel/public:/var/www/html/public:ro

@@ -1,0 +1,110 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: reflectboard-mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    expose:
+      - "3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u${MYSQL_USER}",
+          "-p${MYSQL_PASSWORD}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: reflectboard-redis
+    restart: always
+    command: redis-server --save 60 1 --loglevel warning
+    expose:
+      - "6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  fastapi:
+    image: ghcr.io/${GHCR_OWNER}/reflectboard-fastapi:latest
+    container_name: reflectboard-fastapi
+    restart: always
+    expose:
+      - "8000"
+    env_file: ./fastapi/.env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  laravel:
+    image: ghcr.io/${GHCR_OWNER}/reflectboard-laravel:latest
+    container_name: reflectboard-laravel
+    restart: always
+    expose:
+      - "9000"
+    volumes:
+      - laravel_public:/var/www/html/public
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: ${LARAVEL_APP_KEY}
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: ${MYSQL_DATABASE}
+      DB_USERNAME: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      FASTAPI_BASE_URL: http://fastapi:8000
+      SESSION_DRIVER: redis
+      CACHE_DRIVER: redis
+    command: >
+      sh -c "php artisan migrate --force &&
+             php artisan config:cache &&
+             php artisan route:cache &&
+             php artisan view:cache &&
+             php-fpm"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: reflectboard-nginx
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - laravel_public:/var/www/html/public:ro
+    depends_on:
+      - fastapi
+      - laravel
+
+volumes:
+  mysql_data:
+  redis_data:
+  laravel_public:
