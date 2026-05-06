@@ -12,7 +12,6 @@ services:
       - "3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./mysql-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test:
         [
@@ -66,7 +65,8 @@ services:
       - laravel_public:/var/www/html/public
     env_file: ./laravel/.env
     command: >
-      sh -c "php artisan migrate --force &&
+      sh -c "cp -rT /app/public/build /var/www/html/public/build &&
+             php artisan migrate --force &&
              php artisan config:cache &&
              php artisan route:cache &&
              php artisan view:cache &&
