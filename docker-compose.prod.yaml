@@ -62,15 +62,15 @@ services:
     expose:
       - "9000"
     volumes:
-      - laravel_public:/var/www/html/public
+      - laravel_public:/nginx_public
     env_file: ./laravel/.env
     command: >
-      sh -c "mkdir -p /var/www/html/public/build &&
-             cp -a /app/public/build/. /var/www/html/public/build/ &&
+      sh -c "cp -a /var/www/html/public/. /nginx_public/ &&
              php artisan migrate --force &&
              php artisan config:cache &&
              php artisan route:cache &&
              php artisan view:cache &&
+             chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache &&
              php-fpm"
     depends_on:
       db:

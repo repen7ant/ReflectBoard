@@ -25,5 +25,4 @@ COPY --from=frontend_builder /app/public/build ./public/build
 RUN composer install --no-dev --optimize-autoloader --no-scripts
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 storage bootstrap/cache
-USER www-data
 CMD ["php-fpm"]
