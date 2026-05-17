@@ -600,6 +600,11 @@
                     const item = payload.data;
 
                     if (action === 'create') {
+                        // Don't add subtasks that are not on board
+                        if (item.parent_id && !item.is_on_board) {
+                            return;
+                        }
+
                         if (this.activities[item.status]) {
                             const exists = this.activities[item.status].find(a => a.id === item.id);
                             if (!exists) {
@@ -608,6 +613,14 @@
                         }
 
                     } else if (action === 'update') {
+                        // If subtask is removed from board, delete it from activities
+                        if (item.parent_id && !item.is_on_board) {
+                            Object.keys(this.activities).forEach(status => {
+                                this.activities[status] = this.activities[status].filter(a => a.id !== item.id);
+                            });
+                            return;
+                        }
+
                         let foundInCorrectColumn = false;
                         const targetCol = this.activities[item.status];
 

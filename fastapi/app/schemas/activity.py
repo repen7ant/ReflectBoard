@@ -27,6 +27,8 @@ class ActivityOut(BaseModel):
     completed_at: datetime | None
     created_at: datetime
     updated_at: datetime
+    subtasks_total: int = 0
+    subtasks_done: int = 0
 
     category: CategoryOut | None
     model_config = ConfigDict(from_attributes=True)
