@@ -96,10 +96,22 @@
     min-height: 15rem;
     max-height: calc(100vh - 7.5rem);
     overflow: hidden;
+    position: relative;
 }
 
 .column-footer {
-    padding: 0 0.625rem 0.625rem;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.625rem;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.column-footer .add-btn {
+    pointer-events: auto;
 }
 
 @media (max-width: 56.25rem) {
@@ -142,6 +154,7 @@
 
 .column-body {
     padding: 0.75rem;
+    padding-bottom: 3.5rem;
     overflow-y: auto;
     flex: 1;
     display: flex;

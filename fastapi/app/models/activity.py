@@ -34,6 +34,7 @@ class Status(str, enum.Enum):
 
 class Activity(Base):
     __tablename__ = "activities"
+    __allow_unmapped__ = True
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
@@ -75,3 +76,8 @@ class Activity(Base):
     children: Mapped[list["Activity"]] = relationship(back_populates="parent")
     category: Mapped["Category | None"] = relationship(back_populates="activities")
     position: Mapped[int] = mapped_column(Integer, default=0)
+
+    # Non-mapped computed fields
+    subtasks_total: int = 0
+    subtasks_done: int = 0
+    parent_title: str | None = None

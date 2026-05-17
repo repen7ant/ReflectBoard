@@ -28,17 +28,47 @@ async def get_activities(
     )
 
 
+@router.get("/activities/done", response_model=list[ActivityOut])
+async def get_done_activities(
+    db: AsyncSession = Depends(get_db),
+    search: str | None = Query(None),
+    date_from: date | None = Query(None),
+    date_to: date | None = Query(None),
+    category_id: int | None = Query(None),
+    current_user: User = Depends(get_current_user),
+):
+    return await ActivityService.get_done_activities(
+        db, current_user.id, search, date_from, date_to, category_id
+    )
+
+
+@router.get("/activities/{activity_id}/subtasks", response_model=list[ActivityOut])
+async def get_subtasks(
+    activity_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await ActivityService.get_subtasks(db, activity_id, current_user.id)
+
+
 @router.post("/activities", response_model=ActivityOut, status_code=201)
 async def create_activity(
     data: ActivityCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    activity = await ActivityService.create_activity(db, data, current_user.id)
+    activity, parent = await ActivityService.create_activity(db, data, current_user.id)
 
     activity_out = ActivityOut.model_validate(activity)
     payload = json.dumps({"action": "create", "data": jsonable_encoder(activity_out)})
     await redis_client.publish(f"board:{current_user.id}", payload)
+
+    if parent:
+        parent_out = ActivityOut.model_validate(parent)
+        parent_payload = json.dumps(
+            {"action": "update", "data": jsonable_encoder(parent_out)}
+        )
+        await redis_client.publish(f"board:{current_user.id}", parent_payload)
 
     return activity
 
@@ -49,12 +79,25 @@ async def delete_activity(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    deleted = await ActivityService.delete_activity(db, activity_id, current_user.id)
+    deleted, parent_id = await ActivityService.delete_activity(
+        db, activity_id, current_user.id
+    )
     if not deleted:
         raise HTTPException(status_code=404, detail="Activity not found")
 
     payload = json.dumps({"action": "delete", "data": {"id": activity_id}})
     await redis_client.publish(f"board:{current_user.id}", payload)
+
+    if parent_id:
+        parent = await ActivityService.get_activity_by_id(
+            db, parent_id, current_user.id
+        )
+        if parent:
+            parent_out = ActivityOut.model_validate(parent)
+            parent_payload = json.dumps(
+                {"action": "update", "data": jsonable_encoder(parent_out)}
+            )
+            await redis_client.publish(f"board:{current_user.id}", parent_payload)
 
 
 @router.patch("/activities/{activity_id}", response_model=ActivityOut)
@@ -65,7 +108,7 @@ async def update_activity(
     current_user: User = Depends(get_current_user),
 ):
     update_dict = data.model_dump(exclude_unset=True)
-    activity = await ActivityService.update_activity(
+    activity, parent = await ActivityService.update_activity(
         db, activity_id, current_user.id, update_dict
     )
 
@@ -75,6 +118,13 @@ async def update_activity(
     activity_out = ActivityOut.model_validate(activity)
     payload = json.dumps({"action": "update", "data": jsonable_encoder(activity_out)})
     await redis_client.publish(f"board:{current_user.id}", payload)
+
+    if parent:
+        parent_out = ActivityOut.model_validate(parent)
+        parent_payload = json.dumps(
+            {"action": "update", "data": jsonable_encoder(parent_out)}
+        )
+        await redis_client.publish(f"board:{current_user.id}", parent_payload)
 
     return activity
 
@@ -101,17 +151,3 @@ async def reorder_activities(
     await redis_client.publish(f"board:{current_user.id}", payload)
 
     return {"success": True}
-
-
-@router.get("/activities/done", response_model=list[ActivityOut])
-async def get_done_activities(
-    db: AsyncSession = Depends(get_db),
-    search: str | None = Query(None),
-    date_from: date | None = Query(None),
-    date_to: date | None = Query(None),
-    category_id: int | None = Query(None),
-    current_user: User = Depends(get_current_user),
-):
-    return await ActivityService.get_done_activities(
-        db, current_user.id, search, date_from, date_to, category_id
-    )

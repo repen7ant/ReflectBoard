@@ -27,6 +27,9 @@ class ActivityOut(BaseModel):
     completed_at: datetime | None
     created_at: datetime
     updated_at: datetime
+    subtasks_total: int = 0
+    subtasks_done: int = 0
+    parent_title: str | None = None
 
     category: CategoryOut | None
     model_config = ConfigDict(from_attributes=True)
@@ -41,6 +44,7 @@ class ActivityUpdate(BaseModel):
     time_spent_minutes: int | None = None
     deadline: datetime | None = None
     tags: list[str] | None = None
+    is_on_board: bool | None = None
 
 
 class ActivityCreate(BaseModel):
