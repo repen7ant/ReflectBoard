@@ -38,8 +38,12 @@ class ActivityService:
         user_id: int,
     ) -> Activity:
         activity_dict = data.model_dump(exclude={"user_id"}, exclude_unset=True)
-        activity = Activity(**activity_dict, user_id=user_id)
 
+        if activity_dict.get("is_quick_capture"):
+            activity_dict["status"] = Status.done
+            activity_dict["completed_at"] = func.now()
+
+        activity = Activity(**activity_dict, user_id=user_id)
         db.add(activity)
         await db.commit()
         result = await db.execute(

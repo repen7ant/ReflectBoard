@@ -398,6 +398,9 @@
                     await this.loadCategories();
                     this.$nextTick(() => this.initSortable());
                     this.initWs(token);
+                    window.addEventListener('fab:captured', () => {
+                        this.showToast('Captured!');
+                    });
                 },
 
                 initWs(token) {
@@ -754,5 +757,6 @@
         }
     </script>
 
+@include('components.fab')
 </body>
 </html>

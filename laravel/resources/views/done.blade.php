@@ -262,6 +262,9 @@
                     await this.loadCategories();
                     this.setDatePreset('30days');
                     this.initWs(token);
+                    window.addEventListener('fab:captured', () => {
+                        this.applyFilters();
+                    });
                 },
 
                 initWs(token) {
@@ -437,5 +440,7 @@
             };
         }
     </script>
+
+@include('components.fab')
 </body>
 </html>
