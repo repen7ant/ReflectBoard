@@ -29,6 +29,7 @@ class ActivityOut(BaseModel):
     updated_at: datetime
     subtasks_total: int = 0
     subtasks_done: int = 0
+    parent_title: str | None = None
 
     category: CategoryOut | None
     model_config = ConfigDict(from_attributes=True)

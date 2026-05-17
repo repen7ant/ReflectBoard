@@ -83,6 +83,16 @@ class ActivityService:
                 counts.setdefault(parent_id, [0, 0])
                 counts[parent_id][1] = cnt
 
+        # Get parent titles for subtasks
+        subtask_ids = [a.parent_id for a in activities if a.parent_id]
+        parent_titles = {}
+        if subtask_ids:
+            parent_result = await db.execute(
+                select(Activity.id, Activity.title)
+                .where(Activity.id.in_(subtask_ids))
+            )
+            parent_titles = {pid: title for pid, title in parent_result.all()}
+
         for a in activities:
             if a.is_project and a.id in counts:
                 a.subtasks_total = counts[a.id][0]
@@ -90,6 +100,12 @@ class ActivityService:
             else:
                 a.subtasks_total = 0
                 a.subtasks_done = 0
+
+            # Set parent title for subtasks
+            if a.parent_id and a.parent_id in parent_titles:
+                a.parent_title = parent_titles[a.parent_id]
+            else:
+                a.parent_title = None
 
         return activities
 
@@ -144,6 +160,9 @@ class ActivityService:
             parent = parent_result.scalar_one_or_none()
             if parent:
                 await ActivityService._calculate_subtasks_counters(db, parent)
+                activity.parent_title = parent.title
+        else:
+            activity.parent_title = None
 
         return activity, parent
 
@@ -180,6 +199,20 @@ class ActivityService:
         if not activity:
             return None, None
 
+        # If subtask is being added to board, inherit category and deadline from parent
+        if activity.parent_id and update_data.get("is_on_board") is True:
+            parent_result = await db.execute(
+                select(Activity)
+                .options(selectinload(Activity.category))
+                .where(Activity.id == activity.parent_id, Activity.user_id == user_id)
+            )
+            parent = parent_result.scalar_one_or_none()
+            if parent:
+                if not activity.category_id and parent.category_id:
+                    activity.category_id = parent.category_id
+                if not activity.deadline and parent.deadline:
+                    activity.deadline = parent.deadline
+
         for key, value in update_data.items():
             if hasattr(activity, key) and key != "user_id":
                 setattr(activity, key, value)
@@ -207,6 +240,9 @@ class ActivityService:
             parent = parent_result.scalar_one_or_none()
             if parent:
                 await ActivityService._calculate_subtasks_counters(db, parent)
+                activity.parent_title = parent.title
+        else:
+            activity.parent_title = None
 
         return activity, parent
 

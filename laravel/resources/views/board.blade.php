@@ -70,6 +70,11 @@
                                         <div class="card-project-badge">▸ Project</div>
                                     </template>
 
+                                    <!-- Parent project name for subtasks -->
+                                    <template x-if="activity.parent_id && activity.parent_title">
+                                        <div class="card-parent-badge">↳ <span x-text="activity.parent_title"></span></div>
+                                    </template>
+
                                     <div class="card-title" x-text="activity.title"></div>
 
                                     <template x-if="activity.category">
