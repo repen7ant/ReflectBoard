@@ -41,6 +41,7 @@ class ActivityUpdate(BaseModel):
     time_spent_minutes: int | None = None
     deadline: datetime | None = None
     tags: list[str] | None = None
+    is_on_board: bool | None = None
 
 
 class ActivityCreate(BaseModel):

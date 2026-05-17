@@ -20,6 +20,13 @@ class ActivityService:
             select(Activity)
             .options(selectinload(Activity.category))
             .where(Activity.user_id == user_id)
+            .where(Activity.status != Status.done)
+            .where(
+                or_(
+                    Activity.parent_id.is_(None),
+                    Activity.is_on_board.is_(True),
+                )
+            )
             .order_by(Activity.position.asc())
         )
 
@@ -29,6 +36,55 @@ class ActivityService:
             query = query.where(Activity.category_id == category_id)
 
         result = await db.execute(query)
+        activities = result.scalars().all()
+
+        project_ids = [a.id for a in activities if a.is_project]
+        counts: dict[int, tuple[int, int]] = {}  # {project_id: (total, done)}
+
+        if project_ids:
+            total_result = await db.execute(
+                select(Activity.parent_id, func.count().label("cnt"))
+                .where(Activity.parent_id.in_(project_ids))
+                .group_by(Activity.parent_id)
+            )
+            for parent_id, cnt in total_result.all():
+                counts.setdefault(parent_id, [0, 0])
+                counts[parent_id][0] = cnt
+
+            done_result = await db.execute(
+                select(Activity.parent_id, func.count().label("cnt"))
+                .where(
+                    Activity.parent_id.in_(project_ids),
+                    Activity.status == Status.done,
+                )
+                .group_by(Activity.parent_id)
+            )
+            for parent_id, cnt in done_result.all():
+                counts.setdefault(parent_id, [0, 0])
+                counts[parent_id][1] = cnt
+
+        for a in activities:
+            if a.is_project and a.id in counts:
+                a.subtasks_total = counts[a.id][0]
+                a.subtasks_done = counts[a.id][1]
+            else:
+                a.subtasks_total = 0
+                a.subtasks_done = 0
+
+        return activities
+
+    @staticmethod
+    async def get_subtasks(
+        db: AsyncSession,
+        project_id: int,
+        user_id: int,
+    ) -> list[Activity]:
+        result = await db.execute(
+            select(Activity)
+            .options(selectinload(Activity.category))
+            .where(Activity.parent_id == project_id, Activity.user_id == user_id)
+            .order_by(Activity.position.asc())
+        )
         return result.scalars().all()
 
     @staticmethod
@@ -104,7 +160,6 @@ class ActivityService:
         new_status: str | None,
         ordered_ids: list[int],
     ) -> None:
-
         if activity_id and new_status:
             await ActivityService.update_activity(
                 db, activity_id, user_id, {"status": new_status}

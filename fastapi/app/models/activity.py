@@ -75,3 +75,5 @@ class Activity(Base):
     children: Mapped[list["Activity"]] = relationship(back_populates="parent")
     category: Mapped["Category | None"] = relationship(back_populates="activities")
     position: Mapped[int] = mapped_column(Integer, default=0)
+    subtasks_total: int = 0
+    subtasks_done: int = 0

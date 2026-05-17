@@ -43,6 +43,15 @@ async def create_activity(
     return activity
 
 
+@router.get("/activities/{activity_id}/subtasks", response_model=list[ActivityOut])
+async def get_subtasks(
+    activity_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await ActivityService.get_subtasks(db, activity_id, current_user.id)
+
+
 @router.delete("/activities/{activity_id}", status_code=204)
 async def delete_activity(
     activity_id: int,
