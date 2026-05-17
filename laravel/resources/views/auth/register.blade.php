@@ -27,19 +27,19 @@
                 <div class="field">
                     <label for="email">Email</label>
                     <input id="email" type="email" name="email" value="{{ old('email') }}" required>
-                    <x-input-error :messages="$errors->get('email')" style="color: var(--danger); font-size: 0.75rem; margin-top: 0.25rem;" />
+                    <x-forms.input-error :messages="$errors->get('email')" style="color: var(--danger); font-size: 0.75rem; margin-top: 0.25rem;" />
                 </div>
 
                 <div class="field">
                     <label for="password">Password</label>
                     <input id="password" type="password" name="password" required>
-                    <x-input-error :messages="$errors->get('password')" style="color: var(--danger); font-size: 0.75rem; margin-top: 0.25rem;" />
+                    <x-forms.input-error :messages="$errors->get('password')" style="color: var(--danger); font-size: 0.75rem; margin-top: 0.25rem;" />
                 </div>
 
                 <div class="field" style="margin-bottom: 1.5rem;">
                     <label for="password_confirmation">Confirm Password</label>
                     <input id="password_confirmation" type="password" name="password_confirmation" required>
-                    <x-input-error :messages="$errors->get('password_confirmation')" style="color: var(--danger); font-size: 0.75rem; margin-top: 0.25rem;" />
+                    <x-forms.input-error :messages="$errors->get('password_confirmation')" style="color: var(--danger); font-size: 0.75rem; margin-top: 0.25rem;" />
                 </div>
 
                 <div class="modal-actions" style="justify-content: space-between; align-items: center;">

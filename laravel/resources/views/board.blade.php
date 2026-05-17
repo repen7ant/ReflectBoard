@@ -49,7 +49,7 @@
                         <!-- Card: normal task or project -->
                         <template x-if="!loading">
                             <template x-for="activity in activities[col.status] ?? []" :key="activity.id">
-                                @include('components.activity-card')
+                                @include('components.cards.activity-card')
                             </template>
                         </template>
                     </div>
