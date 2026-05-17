@@ -46,10 +46,6 @@
                             </div>
                         </template>
 
-                        <template x-if="!loading && activities[col.status]?.length === 0">
-                            <div class="empty">— empty —</div>
-                        </template>
-
                         <!-- Card: normal task or project -->
                         <template x-if="!loading">
                             <template x-for="activity in activities[col.status] ?? []" :key="activity.id">
@@ -64,11 +60,6 @@
                                         title="Complete"
                                         @click.stop="openCompleteModal(activity)"
                                     ></button>
-
-                                    <!-- Project badge -->
-                                    <template x-if="activity.is_project">
-                                        <div class="card-project-badge">▸ Project</div>
-                                    </template>
 
                                     <!-- Parent project name for subtasks -->
                                     <template x-if="activity.parent_id && activity.parent_title">
@@ -117,11 +108,11 @@
                             </template>
                         </template>
 
-                    <template x-if="col.status !== 'on_reflection'">
-                        <div class="column-footer">
-                            <button class="add-btn" @click.stop="openCreateModal(col.status)">+ add</button>
-                        </div>
-                    </template>
+                        <!-- Add button -->
+                        <template x-if="col.status !== 'on_reflection' && !loading">
+                            <button class="add-btn" @click.stop="openCreateModal(col.status)">+</button>
+                        </template>
+                    </div>
                 </div>
             </template>
         </div>
@@ -191,14 +182,13 @@
                 </div>
 
                 <div class="field">
-                    <label>Project</label>
-                    <label style="display:flex; align-items:center; gap:0.75rem; cursor:pointer;">
+                    <label style="display:flex; align-items:center; gap:0.5rem;">
+                        Project
                         <input
                             type="checkbox"
                             x-model="modal.is_project"
                             style="width:1.1rem; height:1.1rem; accent-color:var(--accent); cursor:pointer;"
                         >
-                        <span style="font-size:0.9rem; color:var(--text);">This is a project</span>
                     </label>
                 </div>
 
