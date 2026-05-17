@@ -312,12 +312,81 @@
         <div class="modal-overlay" @click.self="projectModal.open = false">
             <div class="modal modal-wide">
 
-                <div class="modal-title">Project</div>
-                <div class="modal-activity-title modal-activity-title-spaced" x-text="projectModal.project?.title"></div>
+                <div class="modal-header modal-header-center">
+                    <div class="modal-header-content">
+                        <div class="detail-label">Created</div>
+                        <div class="detail-value" x-text="formatDate(projectModal.project?.created_at, true)"></div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Title</label>
+                    <input type="text" x-model="projectModal.title">
+                </div>
+
+                <div class="field">
+                    <label>Description</label>
+                    <textarea x-model="projectModal.description" rows="2"></textarea>
+                </div>
+
+                <div class="field">
+                    <label>Category</label>
+                    <div class="category-grid">
+                        <template x-for="cat in categories" :key="cat.id">
+                            <button
+                                type="button"
+                                @click="projectModal.category_id = cat.id"
+                                :class="{ 'selected': projectModal.category_id == cat.id }"
+                                class="category-btn"
+                            >
+                                <div class="category-dot" :style="'background:' + cat.color"></div>
+                                <span class="flex-1 text-left" x-text="cat.name"></span>
+                                <span @click.stop="deleteCategory(cat.id)" class="delete-x">×</span>
+                            </button>
+                        </template>
+                    </div>
+                    <button
+                        type="button"
+                        @click="openCreateCategoryModal()"
+                        class="btn btn-ghost btn-full">
+                        + New category
+                    </button>
+                </div>
+
+                <div class="field" x-data="{ newTag: '' }">
+                    <label>Tags</label>
+                    <div class="tag-input-wrapper">
+
+                        <template x-for="(tag, index) in projectModal.tags" :key="index">
+                            <span class="tag-pill">
+                                <span x-text="'#' + tag"></span>
+                                <button type="button" @click="projectModal.tags.splice(index, 1)" class="tag-pill-remove">&times;</button>
+                            </span>
+                        </template>
+
+                        <input
+                            type="text"
+                            x-model="newTag"
+                            :placeholder="projectModal.tags.length === 0 ? 'Add tag & press space...' : ''"
+                            @keydown.space.prevent="if(newTag.trim()){ projectModal.tags.push(newTag.replace(/^#/, '').trim()); newTag = ''; }"
+                            @keydown.enter.prevent="if(newTag.trim()){ projectModal.tags.push(newTag.replace(/^#/, '').trim()); newTag = ''; }"
+                            @keydown.backspace="if(newTag === '' && projectModal.tags.length > 0){ projectModal.tags.pop(); }"
+                            class="tag-input"
+                        >
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Deadline</label>
+                    <div class="deadline-inputs">
+                        <input type="date" x-model="projectModal.deadlineDate" class="deadline-date">
+                        <input type="time" x-model="projectModal.deadlineTime" class="deadline-time">
+                    </div>
+                </div>
 
                 <!-- Progress -->
                 <template x-if="projectModal.subtasks.length > 0">
-                    <div style="margin-bottom:1.25rem;">
+                    <div style="margin-bottom:1.25rem; margin-top:1.5rem;">
                         <div class="card-progress-label" style="margin-bottom:0.375rem;">
                             <span x-text="projectModal.subtasks.filter(s => s.status === 'done').length"></span>
                             /
@@ -419,13 +488,8 @@
                         Delete project
                     </button>
                     <div class="modal-actions-group">
-                        <button class="btn btn-ghost" @click="projectModal.open = false">Close</button>
-                        <button
-                            class="btn btn-success"
-                            @click="completeProject()"
-                            :disabled="projectModal.subtasks.filter(s => s.status !== 'done').length > 0"
-                            :title="projectModal.subtasks.filter(s => s.status !== 'done').length > 0 ? 'Complete all subtasks first' : 'Complete project'"
-                        >Complete</button>
+                        <button class="btn btn-ghost" @click="projectModal.open = false">Cancel</button>
+                        <button class="btn btn-primary" @click="saveProject()">Save Changes</button>
                     </div>
                 </div>
 
@@ -530,6 +594,12 @@
                     subtasks: [],
                     loadingSubtasks: false,
                     newSubtaskTitle: '',
+                    title: '',
+                    description: '',
+                    category_id: '',
+                    deadlineDate: '',
+                    deadlineTime: '',
+                    tags: [],
                 },
                 editModal: {
                     open: false,
@@ -779,12 +849,22 @@
                 },
 
                 async openProjectModal(project) {
+                    const dl = project.deadline ? project.deadline.split('T') : ['', ''];
+                    const timeRaw = dl[1] ? dl[1].slice(0, 5) : '';
+                    const timeVal = (timeRaw === '00:00') ? '' : timeRaw;
+
                     this.projectModal = {
                         open: true,
                         project,
                         subtasks: [],
                         loadingSubtasks: true,
                         newSubtaskTitle: '',
+                        title: project.title,
+                        description: project.description || '',
+                        category_id: project.category_id || '',
+                        deadlineDate: dl[0] || '',
+                        deadlineTime: timeVal,
+                        tags: project.tags ? [...project.tags] : [],
                     };
                     try {
                         const res = await axios.get(
@@ -860,12 +940,6 @@
                     } catch (e) {
                         this.showToast('Error deleting subtask');
                     }
-                },
-
-                async completeProject() {
-                    if (!this.projectModal.project) return;
-                    this.projectModal.open = false;
-                    this.openCompleteModal(this.projectModal.project);
                 },
 
                 updateProjectCounters(projectId) {
@@ -992,6 +1066,24 @@
                         this.showToast('Updated successfully');
                     } catch (e) {
                         this.showToast('Error updating activity');
+                    }
+                },
+
+                async saveProject() {
+                    const id = this.projectModal.project.id;
+                    try {
+                        await axios.patch(`${API_BASE}/activities/${id}`, {
+                            title: this.projectModal.title,
+                            description: this.projectModal.description || null,
+                            category_id: this.projectModal.category_id || null,
+                            deadline: this.getDeadline(this.projectModal.deadlineDate, this.projectModal.deadlineTime),
+                            tags: this.projectModal.tags,
+                        }, this.getAuthConfig());
+                        this.projectModal.open = false;
+                        await this.loadActivities(false);
+                        this.showToast('Project updated successfully');
+                    } catch (e) {
+                        this.showToast('Error updating project');
                     }
                 },
 
