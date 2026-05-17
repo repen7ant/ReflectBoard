@@ -76,7 +76,6 @@
     min-width: 2.5rem;
     min-height: 2.5rem;
     flex-shrink: 0;
-    margin: 0.5rem auto 0;
     border: 1px dashed var(--border);
     border-radius: 50%;
     background: transparent;
