@@ -16,6 +16,8 @@ export function donePage() {
         detailModal: {
             open: false,
             activity: null,
+            subtasks: [],
+            loadingSubtasks: false,
         },
         ws: null,
 
@@ -159,8 +161,30 @@ export function donePage() {
         },
 
         // ─── Modal ────────────────────────────────────────────
-        openDetailModal(activity) {
-            this.detailModal = { open: true, activity };
+        async openDetailModal(activity) {
+            this.detailModal = {
+                open: true,
+                activity,
+                subtasks: [],
+                loadingSubtasks: false,
+            };
+
+            if (activity.is_project) {
+                await this.loadSubtasks(activity.id);
+            }
+        },
+
+        async loadSubtasks(projectId) {
+            this.detailModal.loadingSubtasks = true;
+            try {
+                const res = await axios.get(`${API_BASE}/activities/${projectId}/subtasks`, this.getAuthConfig());
+                this.detailModal.subtasks = res.data.filter(s => s.status === 'done');
+            } catch (e) {
+                console.error('Error loading subtasks', e);
+                this.detailModal.subtasks = [];
+            } finally {
+                this.detailModal.loadingSubtasks = false;
+            }
         },
 
         async deleteActivity(activity) {
@@ -193,6 +217,11 @@ export function donePage() {
             if (h > 0 && m > 0) return `${h}h ${m}m`;
             if (h > 0)          return `${h}h`;
             return `${m}m`;
+        },
+
+        pluralizeSubtasks(count) {
+            if (count === 1) return '1 subtask';
+            return `${count} subtasks`;
         },
     };
 }

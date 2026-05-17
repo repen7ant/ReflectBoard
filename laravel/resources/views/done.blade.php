@@ -113,9 +113,14 @@
         <template x-if="!loading && activities.length > 0">
             <div class="activities-list">
                 <template x-for="activity in activities" :key="activity.id">
-                    <div class="activity-item" @click="openDetailModal(activity)">
+                    <div class="activity-item" :class="{ 'activity-project': activity.is_project }" @click="openDetailModal(activity)">
                         <div class="activity-header">
                             <div style="flex: 1;">
+                                <!-- Parent project badge for subtasks -->
+                                <template x-if="activity.parent_id && activity.parent_title">
+                                    <div class="card-parent-badge" style="margin-bottom: 0.5rem;">↳ <span x-text="activity.parent_title"></span></div>
+                                </template>
+
                                 <div class="activity-title-large" x-text="activity.title"></div>
                                 <template x-if="activity.category || activity.category_snapshot_name">
                                     <div class="card-category" style="margin-top: 0.5rem;">
@@ -128,6 +133,11 @@
                                         <span class="tag-badge">#<span x-text="tag"></span></span>
                                     </template>
                                 </div>
+
+                                <!-- Subtasks counter for projects -->
+                                <template x-if="activity.is_project && activity.subtasks_total > 0">
+                                    <div style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--text-muted);" x-text="pluralizeSubtasks(activity.subtasks_total)"></div>
+                                </template>
                             </div>
                             <div class="activity-meta">
                                 <div class="activity-date" x-text="formatDate(activity.completed_at)"></div>

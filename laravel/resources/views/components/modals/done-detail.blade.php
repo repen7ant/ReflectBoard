@@ -39,6 +39,34 @@
                 </div>
             </template>
 
+            <!-- Subtasks list for projects -->
+            <template x-if="detailModal.activity?.is_project">
+                <div style="margin-top: 1rem;">
+                    <div class="detail-label" style="margin-bottom: 0.5rem;">Subtasks</div>
+                    <template x-if="detailModal.loadingSubtasks">
+                        <div class="loading-center" style="padding: 1rem;"><div class="spinner"></div></div>
+                    </template>
+                    <template x-if="!detailModal.loadingSubtasks && detailModal.subtasks.length === 0">
+                        <div style="color: var(--text-muted); font-size: 0.875rem; padding: 0.5rem;">No subtasks</div>
+                    </template>
+                    <template x-if="!detailModal.loadingSubtasks && detailModal.subtasks.length > 0">
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                            <template x-for="subtask in detailModal.subtasks" :key="subtask.id">
+                                <div style="padding: 0.75rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: 0.375rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <span style="color: var(--text-muted);">✓</span>
+                                        <span x-text="subtask.title"></span>
+                                    </div>
+                                    <template x-if="subtask.completed_at">
+                                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; margin-left: 1.5rem;" x-text="'Completed: ' + formatDate(subtask.completed_at)"></div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
             <div class="modal-actions modal-actions-spaced">
                 <button class="btn btn-danger" @click="deleteActivity(detailModal.activity)">Delete</button>
                 <button class="btn btn-ghost" @click="detailModal.open = false">Close</button>

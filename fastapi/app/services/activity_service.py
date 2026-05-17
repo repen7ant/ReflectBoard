@@ -10,7 +10,23 @@ from app.schemas.activity import ActivityCreate
 
 class ActivityService:
     @staticmethod
-    async def _calculate_subtasks_counters(db: AsyncSession, activity: Activity) -> None:
+    async def get_activity_by_id(
+        db: AsyncSession, activity_id: int, user_id: int
+    ) -> Activity | None:
+        result = await db.execute(
+            select(Activity)
+            .options(selectinload(Activity.category))
+            .where(Activity.id == activity_id, Activity.user_id == user_id)
+        )
+        activity = result.scalar_one_or_none()
+        if activity:
+            await ActivityService._calculate_subtasks_counters(db, activity)
+        return activity
+
+    @staticmethod
+    async def _calculate_subtasks_counters(
+        db: AsyncSession, activity: Activity
+    ) -> None:
         """Calculate and set subtasks_total and subtasks_done for a project"""
         if activity.is_project:
             total_result = await db.execute(
@@ -88,8 +104,7 @@ class ActivityService:
         parent_titles = {}
         if subtask_ids:
             parent_result = await db.execute(
-                select(Activity.id, Activity.title)
-                .where(Activity.id.in_(subtask_ids))
+                select(Activity.id, Activity.title).where(Activity.id.in_(subtask_ids))
             )
             parent_titles = {pid: title for pid, title in parent_result.all()}
 
@@ -167,7 +182,9 @@ class ActivityService:
         return activity, parent
 
     @staticmethod
-    async def delete_activity(db: AsyncSession, activity_id: int, user_id: int) -> tuple[bool, int | None]:
+    async def delete_activity(
+        db: AsyncSession, activity_id: int, user_id: int
+    ) -> tuple[bool, int | None]:
         """Delete activity and return (success, parent_id_if_exists)"""
         result = await db.execute(
             select(Activity).where(
@@ -311,4 +328,56 @@ class ActivityService:
             query = query.where(Activity.category_id == category_id)
 
         result = await db.execute(query)
-        return result.scalars().all()
+        activities = result.scalars().all()
+
+        # Calculate subtasks counters for projects
+        project_ids = [a.id for a in activities if a.is_project]
+        counts: dict[int, tuple[int, int]] = {}  # {project_id: (total, done)}
+
+        if project_ids:
+            total_result = await db.execute(
+                select(Activity.parent_id, func.count().label("cnt"))
+                .where(Activity.parent_id.in_(project_ids))
+                .group_by(Activity.parent_id)
+            )
+            for parent_id, cnt in total_result.all():
+                counts.setdefault(parent_id, [0, 0])
+                counts[parent_id][0] = cnt
+
+            done_result = await db.execute(
+                select(Activity.parent_id, func.count().label("cnt"))
+                .where(
+                    Activity.parent_id.in_(project_ids),
+                    Activity.status == Status.done,
+                )
+                .group_by(Activity.parent_id)
+            )
+            for parent_id, cnt in done_result.all():
+                counts.setdefault(parent_id, [0, 0])
+                counts[parent_id][1] = cnt
+
+        # Get parent titles for subtasks
+        subtask_ids = [a.parent_id for a in activities if a.parent_id]
+        parent_titles = {}
+        if subtask_ids:
+            parent_result = await db.execute(
+                select(Activity.id, Activity.title).where(Activity.id.in_(subtask_ids))
+            )
+            parent_titles = {pid: title for pid, title in parent_result.all()}
+
+        for a in activities:
+            # Set subtasks counters for projects
+            if a.is_project and a.id in counts:
+                a.subtasks_total = counts[a.id][0]
+                a.subtasks_done = counts[a.id][1]
+            else:
+                a.subtasks_total = 0
+                a.subtasks_done = 0
+
+            # Set parent title for subtasks
+            if a.parent_id and a.parent_id in parent_titles:
+                a.parent_title = parent_titles[a.parent_id]
+            else:
+                a.parent_title = None
+
+        return activities

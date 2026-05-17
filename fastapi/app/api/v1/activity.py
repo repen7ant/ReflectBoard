@@ -28,6 +28,29 @@ async def get_activities(
     )
 
 
+@router.get("/activities/done", response_model=list[ActivityOut])
+async def get_done_activities(
+    db: AsyncSession = Depends(get_db),
+    search: str | None = Query(None),
+    date_from: date | None = Query(None),
+    date_to: date | None = Query(None),
+    category_id: int | None = Query(None),
+    current_user: User = Depends(get_current_user),
+):
+    return await ActivityService.get_done_activities(
+        db, current_user.id, search, date_from, date_to, category_id
+    )
+
+
+@router.get("/activities/{activity_id}/subtasks", response_model=list[ActivityOut])
+async def get_subtasks(
+    activity_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await ActivityService.get_subtasks(db, activity_id, current_user.id)
+
+
 @router.post("/activities", response_model=ActivityOut, status_code=201)
 async def create_activity(
     data: ActivityCreate,
@@ -42,19 +65,12 @@ async def create_activity(
 
     if parent:
         parent_out = ActivityOut.model_validate(parent)
-        parent_payload = json.dumps({"action": "update", "data": jsonable_encoder(parent_out)})
+        parent_payload = json.dumps(
+            {"action": "update", "data": jsonable_encoder(parent_out)}
+        )
         await redis_client.publish(f"board:{current_user.id}", parent_payload)
 
     return activity
-
-
-@router.get("/activities/{activity_id}/subtasks", response_model=list[ActivityOut])
-async def get_subtasks(
-    activity_id: int,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    return await ActivityService.get_subtasks(db, activity_id, current_user.id)
 
 
 @router.delete("/activities/{activity_id}", status_code=204)
@@ -63,7 +79,9 @@ async def delete_activity(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    deleted, parent_id = await ActivityService.delete_activity(db, activity_id, current_user.id)
+    deleted, parent_id = await ActivityService.delete_activity(
+        db, activity_id, current_user.id
+    )
     if not deleted:
         raise HTTPException(status_code=404, detail="Activity not found")
 
@@ -71,12 +89,14 @@ async def delete_activity(
     await redis_client.publish(f"board:{current_user.id}", payload)
 
     if parent_id:
-        parent, _ = await ActivityService.update_activity(
-            db, parent_id, current_user.id, {}
+        parent = await ActivityService.get_activity_by_id(
+            db, parent_id, current_user.id
         )
         if parent:
             parent_out = ActivityOut.model_validate(parent)
-            parent_payload = json.dumps({"action": "update", "data": jsonable_encoder(parent_out)})
+            parent_payload = json.dumps(
+                {"action": "update", "data": jsonable_encoder(parent_out)}
+            )
             await redis_client.publish(f"board:{current_user.id}", parent_payload)
 
 
@@ -101,7 +121,9 @@ async def update_activity(
 
     if parent:
         parent_out = ActivityOut.model_validate(parent)
-        parent_payload = json.dumps({"action": "update", "data": jsonable_encoder(parent_out)})
+        parent_payload = json.dumps(
+            {"action": "update", "data": jsonable_encoder(parent_out)}
+        )
         await redis_client.publish(f"board:{current_user.id}", parent_payload)
 
     return activity
@@ -129,17 +151,3 @@ async def reorder_activities(
     await redis_client.publish(f"board:{current_user.id}", payload)
 
     return {"success": True}
-
-
-@router.get("/activities/done", response_model=list[ActivityOut])
-async def get_done_activities(
-    db: AsyncSession = Depends(get_db),
-    search: str | None = Query(None),
-    date_from: date | None = Query(None),
-    date_to: date | None = Query(None),
-    category_id: int | None = Query(None),
-    current_user: User = Depends(get_current_user),
-):
-    return await ActivityService.get_done_activities(
-        db, current_user.id, search, date_from, date_to, category_id
-    )
