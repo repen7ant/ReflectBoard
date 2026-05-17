@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="api-token" content="{{ auth()->check() ? auth()->user()->api_token : '' }}">
     <title>Done — ReflectBoard</title>
-
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
-
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body x-data="donePage()" x-init="init()">
@@ -28,6 +26,7 @@
 
     <!-- Done Page -->
     <div class="done-wrapper">
+
         <!-- Filters Panel -->
         <div class="filters-panel">
             <div class="filters-grid">
@@ -58,49 +57,21 @@
                 <div style="display: flex; gap: 0.5rem;">
                     <div class="filter-group" style="flex: 1; min-width: 0;">
                         <label class="filter-label">From</label>
-                        <input
-                            type="date"
-                            class="filter-input"
-                            x-model="filters.date_from"
-                            @change="applyFilters()"
-                            style="width: 100%; box-sizing: border-box;"
-                        >
+                        <input type="date" class="filter-input" x-model="filters.date_from" @change="applyFilters()" style="width: 100%; box-sizing: border-box;">
                     </div>
                     <div class="filter-group" style="flex: 1; min-width: 0;">
                         <label class="filter-label">To</label>
-                        <input
-                            type="date"
-                            class="filter-input"
-                            x-model="filters.date_to"
-                            @change="applyFilters()"
-                            style="width: 100%; box-sizing: border-box;"
-                        >
+                        <input type="date" class="filter-input" x-model="filters.date_to" @change="applyFilters()" style="width: 100%; box-sizing: border-box;">
                     </div>
                 </div>
             </div>
 
             <!-- Date Presets -->
             <div class="date-presets">
-                <button
-                    class="preset-btn"
-                    :class="{ 'active': activePreset === 'today' }"
-                    @click="setDatePreset('today')"
-                >Today</button>
-                <button
-                    class="preset-btn"
-                    :class="{ 'active': activePreset === '7days' }"
-                    @click="setDatePreset('7days')"
-                >7 Days</button>
-                <button
-                    class="preset-btn"
-                    :class="{ 'active': activePreset === '30days' }"
-                    @click="setDatePreset('30days')"
-                >30 Days</button>
-                <button
-                    class="preset-btn"
-                    :class="{ 'active': activePreset === 'all' }"
-                    @click="setDatePreset('all')"
-                >All Time</button>
+                <button class="preset-btn" :class="{ 'active': activePreset === 'today' }"  @click="setDatePreset('today')">Today</button>
+                <button class="preset-btn" :class="{ 'active': activePreset === '7days' }"  @click="setDatePreset('7days')">7 Days</button>
+                <button class="preset-btn" :class="{ 'active': activePreset === '30days' }" @click="setDatePreset('30days')">30 Days</button>
+                <button class="preset-btn" :class="{ 'active': activePreset === 'all' }"    @click="setDatePreset('all')">All Time</button>
             </div>
 
             <!-- Active Filters -->
@@ -129,9 +100,7 @@
 
         <!-- Activities List -->
         <template x-if="loading">
-            <div class="loading-center">
-                <div class="spinner"></div>
-            </div>
+            <div class="loading-center"><div class="spinner"></div></div>
         </template>
 
         <template x-if="!loading && activities.length === 0">
@@ -156,9 +125,7 @@
                                 </template>
                                 <div x-show="activity.tags && activity.tags.length > 0" class="tags-container">
                                     <template x-for="tag in (activity.tags || [])" :key="tag">
-                                        <span class="tag-badge">
-                                            #<span x-text="tag"></span>
-                                        </span>
+                                        <span class="tag-badge">#<span x-text="tag"></span></span>
                                     </template>
                                 </div>
                             </div>
@@ -179,268 +146,16 @@
                 </template>
             </div>
         </template>
+
     </div>
 
-    <!-- Detail Modal -->
-    <template x-if="detailModal.open">
-        <div class="modal-overlay" @click.self="detailModal.open = false">
-            <div class="modal">
-                <div class="modal-header">
-                    <div style="flex: 1;">
-                        <div class="modal-activity-title" x-text="detailModal.activity?.title"></div>
-                        <template x-if="detailModal.activity?.category || detailModal.activity?.category_snapshot_name">
-                            <div class="card-category" style="margin-top: 0.5rem;">
-                                <div class="category-dot" :style="'background:' + (detailModal.activity.category?.color ?? detailModal.activity.category_snapshot_color)"></div>
-                                <span x-text="detailModal.activity.category?.name ?? detailModal.activity.category_snapshot_name"></span>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-
-                <div class="detail-row">
-                    <span class="detail-label">Completed</span>
-                    <span class="detail-value" x-text="formatDate(detailModal.activity?.completed_at, true)"></span>
-                </div>
-
-                <template x-if="detailModal.activity?.time_spent_minutes">
-                    <div class="detail-row">
-                        <span class="detail-label">Time Spent</span>
-                        <span class="detail-value" x-text="formatTime(detailModal.activity.time_spent_minutes)"></span>
-                    </div>
-                </template>
-
-                <template x-if="detailModal.activity?.description">
-                    <div style="margin-top: 1rem;">
-                        <div class="detail-label" style="margin-bottom: 0.5rem;">Description</div>
-                        <div class="description-block" x-text="detailModal.activity.description"></div>
-                    </div>
-                </template>
-
-                <template x-if="detailModal.activity?.reflection_text">
-                    <div style="margin-top: 1rem;">
-                        <div class="detail-label" style="margin-bottom: 0.5rem;">Reflection</div>
-                        <div class="description-block" x-text="detailModal.activity.reflection_text"></div>
-                    </div>
-                </template>
-
-                <div class="modal-actions modal-actions-spaced">
-                    <button class="btn btn-danger" @click="deleteActivity(detailModal.activity); detailModal.open = false">Delete</button>
-                    <button class="btn btn-ghost" @click="detailModal.open = false">Close</button>
-                </div>
-            </div>
-        </div>
-    </template>
+    <!-- Modals -->
+    @include('components.modals.done-detail')
 
     <script>
-        const API_BASE = '{{ config("services.api_base.url") }}';
-
-        function donePage() {
-            return {
-                loading: true,
-                activities: [],
-                categories: [],
-                filters: {
-                    search: '',
-                    category_id: '',
-                    date_from: '',
-                    date_to: '',
-                },
-                activePreset: '30days',
-                detailModal: {
-                    open: false,
-                    activity: null,
-                },
-                ws: null,
-
-                async init() {
-                    const token = document.querySelector('meta[name="api-token"]')?.content;
-                    if (!token) {
-                        window.location.href = '/login';
-                        return;
-                    }
-
-                    await this.loadCategories();
-                    this.setDatePreset('30days');
-                    this.initWs(token);
-                    window.addEventListener('fab:captured', () => {
-                        this.applyFilters();
-                    });
-                },
-
-                initWs(token) {
-                    const url = new URL(API_BASE);
-                    const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-                    const wsUrl = `${wsProtocol}//${url.host}/api/v1/ws?token=${token}`;
-
-                    this.ws = new WebSocket(wsUrl);
-
-                    this.ws.onmessage = (event) => {
-                        const payload = JSON.parse(event.data);
-                        this.handleRemoteUpdate(payload);
-                    };
-
-                    this.ws.onclose = () => {
-                        console.log("WebSocket disconnected. Auto-reconnect in 3s...");
-                        setTimeout(() => this.initWs(token), 3000);
-                    };
-                },
-
-                handleRemoteUpdate(payload) {
-                    const action = payload.action;
-                    const item = payload.data;
-
-                    if (action === 'update' && item.status === 'done') {
-                        const index = this.activities.findIndex(a => a.id === item.id);
-                        if (index !== -1) {
-                            this.activities[index] = item;
-                        } else {
-                            this.activities.unshift(item);
-                        }
-                    } else if (action === 'delete') {
-                        this.activities = this.activities.filter(a => a.id !== item.id);
-                    } else if (action === 'reorder' || action === 'create') {
-                        this.applyFilters();
-                    }
-                },
-
-                getAuthConfig() {
-                    const token = document.querySelector('meta[name="api-token"]')?.content;
-                    return { headers: { Authorization: `Bearer ${token}` } };
-                },
-
-                async loadCategories() {
-                    try {
-                        const res = await axios.get(`${API_BASE}/categories`, this.getAuthConfig());
-                        this.categories = res.data;
-                    } catch (e) {
-                        console.error('Error loading categories', e);
-                    }
-                },
-
-                async applyFilters() {
-                    this.loading = true;
-                    this.activePreset = '';
-                    try {
-                        const params = {};
-                        if (this.filters.search) params.search = this.filters.search;
-                        if (this.filters.category_id) params.category_id = this.filters.category_id;
-                        if (this.filters.date_from) params.date_from = this.filters.date_from;
-                        if (this.filters.date_to) params.date_to = this.filters.date_to;
-
-                        const res = await axios.get(`${API_BASE}/activities/done`, {
-                            ...this.getAuthConfig(),
-                            params,
-                        });
-                        this.activities = res.data;
-                    } catch (e) {
-                        console.error('Error loading activities', e);
-                    } finally {
-                        this.loading = false;
-                    }
-                },
-
-                setDatePreset(preset) {
-                    this.activePreset = preset;
-                    const today = new Date();
-                    const formatDate = (d) => d.toISOString().split('T')[0];
-
-                    if (preset === 'today') {
-                        this.filters.date_from = formatDate(today);
-                        this.filters.date_to = formatDate(today);
-                    } else if (preset === '7days') {
-                        const weekAgo = new Date(today);
-                        weekAgo.setDate(weekAgo.getDate() - 7);
-                        this.filters.date_from = formatDate(weekAgo);
-                        this.filters.date_to = formatDate(today);
-                    } else if (preset === '30days') {
-                        const monthAgo = new Date(today);
-                        monthAgo.setDate(monthAgo.getDate() - 30);
-                        this.filters.date_from = formatDate(monthAgo);
-                        this.filters.date_to = formatDate(today);
-                    } else if (preset === 'all') {
-                        this.filters.date_from = '';
-                        this.filters.date_to = '';
-                    }
-
-                    this.applyFilters();
-                },
-
-                hasActiveFilters() {
-                    return this.filters.search || this.filters.category_id || this.filters.date_from || this.filters.date_to;
-                },
-
-                clearAllFilters() {
-                    this.filters.search = '';
-                    this.filters.category_id = '';
-                    this.filters.date_from = '';
-                    this.filters.date_to = '';
-                    this.activePreset = '';
-                    this.applyFilters();
-                },
-
-                clearDateFilter() {
-                    this.filters.date_from = '';
-                    this.filters.date_to = '';
-                    this.activePreset = '';
-                    this.applyFilters();
-                },
-
-                getCategoryName(id) {
-                    const cat = this.categories.find(c => c.id == id);
-                    return cat ? cat.name : '';
-                },
-
-                formatDateRange() {
-                    if (this.filters.date_from && this.filters.date_to) {
-                        return `${this.filters.date_from} — ${this.filters.date_to}`;
-                    } else if (this.filters.date_from) {
-                        return `From ${this.filters.date_from}`;
-                    } else if (this.filters.date_to) {
-                        return `Until ${this.filters.date_to}`;
-                    }
-                    return '';
-                },
-
-                formatDate(dateStr, withTime = false) {
-                    if (!dateStr) return '';
-                    const d = new Date(dateStr);
-                    const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                    if (withTime) {
-                        const time = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-                        return `${date} at ${time}`;
-                    }
-                    return date;
-                },
-
-                formatTime(minutes) {
-                    if (!minutes) return '';
-                    const h = Math.floor(minutes / 60);
-                    const m = minutes % 60;
-                    if (h > 0 && m > 0) return `${h}h ${m}m`;
-                    if (h > 0) return `${h}h`;
-                    return `${m}m`;
-                },
-
-                openDetailModal(activity) {
-                    this.detailModal.activity = activity;
-                    this.detailModal.open = true;
-                },
-
-                async deleteActivity(activity) {
-                    if (!confirm(`Delete "${activity.title}"?`)) return;
-
-                    try {
-                        await axios.delete(`${API_BASE}/activities/${activity.id}`, this.getAuthConfig());
-                        this.activities = this.activities.filter(a => a.id !== activity.id);
-                    } catch (e) {
-                        console.error('Error deleting activity', e);
-                        alert('Failed to delete activity');
-                    }
-                },
-            };
-        }
+        window.API_BASE = '{{ config("services.api_base.url") }}';
     </script>
 
-@include('components.fab')
+    @include('components.fab')
 </body>
 </html>
