@@ -42,6 +42,12 @@ body.is-dragging .card:hover {
     transform: none;
 }
 
+body.no-hover .card:hover {
+    border-color: var(--border);
+    box-shadow: none;
+    transform: none;
+}
+
 .card-title {
     font-size: 1rem;
     font-weight: 500;
@@ -506,6 +512,10 @@ body.is-dragging .card:hover {
 }
 
 body.is-dragging .card-project:hover {
+    border-color: var(--accent);
+}
+
+body.no-hover .card-project:hover {
     border-color: var(--accent);
 }
 

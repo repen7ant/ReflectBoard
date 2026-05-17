@@ -770,6 +770,13 @@
 
                             onEnd: async (evt) => {
                                 document.body.classList.remove('is-dragging');
+
+                                // Temporarily disable hover on all cards to prevent unwanted highlighting
+                                document.body.classList.add('no-hover');
+                                setTimeout(() => {
+                                    document.body.classList.remove('no-hover');
+                                }, 100);
+
                                 const activityId = parseInt(evt.item.dataset.id);
                                 const oldStatus = evt.from.dataset.status;
                                 const newStatus = evt.to.dataset.status;
