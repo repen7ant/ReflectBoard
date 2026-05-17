@@ -50,14 +50,26 @@
                             <div class="empty">— empty —</div>
                         </template>
 
+                        <!-- Card: normal task or project -->
                         <template x-if="!loading">
                             <template x-for="activity in activities[col.status] ?? []" :key="activity.id">
-                                <div class="card" :data-id="activity.id" @click="openEditModal(activity)">
+                                <div
+                                    class="card"
+                                    :class="{ 'card-project': activity.is_project }"
+                                    :data-id="activity.id"
+                                    @click="activity.is_project ? openProjectModal(activity) : openEditModal(activity)"
+                                >
                                     <button
                                         class="complete-circle"
                                         title="Complete"
                                         @click.stop="openCompleteModal(activity)"
                                     ></button>
+
+                                    <!-- Project badge -->
+                                    <template x-if="activity.is_project">
+                                        <div class="card-project-badge">▸ Project</div>
+                                    </template>
+
                                     <div class="card-title" x-text="activity.title"></div>
 
                                     <template x-if="activity.category">
@@ -66,13 +78,13 @@
                                             <span x-text="activity.category.name"></span>
                                         </div>
                                     </template>
+
                                     <div x-show="activity.tags && activity.tags.length > 0" class="tags-container">
                                         <template x-for="tag in (activity.tags || [])" :key="tag">
-                                            <span class="tag-badge">
-                                                #<span x-text="tag"></span>
-                                            </span>
+                                            <span class="tag-badge">#<span x-text="tag"></span></span>
                                         </template>
                                     </div>
+
                                     <template x-if="activity.deadline">
                                         <div
                                             class="card-deadline"
@@ -80,10 +92,25 @@
                                             x-text="formatDate(activity.deadline, false)"
                                         ></div>
                                     </template>
+
+                                    <!-- Progress bar for project -->
+                                    <template x-if="activity.is_project && activity.subtasks_total > 0">
+                                        <div class="card-progress">
+                                            <div class="card-progress-label">
+                                                <span x-text="activity.subtasks_done"></span>/<span x-text="activity.subtasks_total"></span> done
+                                            </div>
+                                            <div class="card-progress-bar">
+                                                <div
+                                                    class="card-progress-fill"
+                                                    :class="activity.subtasks_done === activity.subtasks_total ? 'done' : ''"
+                                                    :style="'width:' + Math.round((activity.subtasks_done / activity.subtasks_total) * 100) + '%'"
+                                                ></div>
+                                            </div>
+                                        </div>
+                                    </template>
                                 </div>
                             </template>
                         </template>
-                    </div>
 
                     <template x-if="col.status !== 'on_reflection'">
                         <div class="column-footer">
@@ -156,6 +183,18 @@
                             class="tag-input"
                         >
                     </div>
+                </div>
+
+                <div class="field">
+                    <label>Project</label>
+                    <label style="display:flex; align-items:center; gap:0.75rem; cursor:pointer;">
+                        <input
+                            type="checkbox"
+                            x-model="modal.is_project"
+                            style="width:1.1rem; height:1.1rem; accent-color:var(--accent); cursor:pointer;"
+                        >
+                        <span style="font-size:0.9rem; color:var(--text);">This is a project</span>
+                    </label>
                 </div>
 
                 <div class="field">
@@ -262,6 +301,133 @@
         </div>
     </template>
 
+
+    <!-- Modal: project -->
+    <template x-if="projectModal.open">
+        <div class="modal-overlay" @click.self="projectModal.open = false">
+            <div class="modal modal-wide">
+
+                <div class="modal-title">Project</div>
+                <div class="modal-activity-title modal-activity-title-spaced" x-text="projectModal.project?.title"></div>
+
+                <!-- Progress -->
+                <template x-if="projectModal.subtasks.length > 0">
+                    <div style="margin-bottom:1.25rem;">
+                        <div class="card-progress-label" style="margin-bottom:0.375rem;">
+                            <span x-text="projectModal.subtasks.filter(s => s.status === 'done').length"></span>
+                            /
+                            <span x-text="projectModal.subtasks.length"></span>
+                            subtasks done
+                        </div>
+                        <div class="card-progress-bar">
+                            <div
+                                class="card-progress-fill"
+                                :style="'width:' + (projectModal.subtasks.length
+                                    ? Math.round(projectModal.subtasks.filter(s => s.status === 'done').length / projectModal.subtasks.length * 100)
+                                    : 0) + '%'"
+                            ></div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- List of subtasks -->
+                <div class="project-section-label">Subtasks</div>
+
+                <template x-if="projectModal.loadingSubtasks">
+                    <div class="loading-center"><div class="spinner"></div></div>
+                </template>
+
+                <template x-if="!projectModal.loadingSubtasks">
+                    <div class="subtask-list">
+                        <template x-if="projectModal.subtasks.length === 0">
+                            <div class="subtask-empty">No subtasks yet</div>
+                        </template>
+
+                        <template x-for="sub in projectModal.subtasks" :key="sub.id">
+                            <div
+                                class="subtask-item"
+                                :class="{
+                                    'done': sub.status === 'done',
+                                    'on-board': sub.is_on_board && sub.status !== 'done'
+                                }"
+                            >
+                                <div class="subtask-title" :class="{ 'done': sub.status === 'done' }" x-text="sub.title"></div>
+
+                                <div class="subtask-status" :class="{ 'on-board': sub.is_on_board && sub.status !== 'done' }">
+                                    <template x-if="sub.status === 'done'">
+                                        <span>✓ done</span>
+                                    </template>
+                                    <template x-if="sub.is_on_board && sub.status !== 'done'">
+                                        <span>on board</span>
+                                    </template>
+                                </div>
+
+                                <div class="subtask-actions">
+                                    <!-- Take to board -->
+                                    <template x-if="!sub.is_on_board && sub.status !== 'done'">
+                                        <button
+                                            class="btn btn-ghost btn-xs"
+                                            @click.stop="takeToBoard(sub)"
+                                            title="Take to board"
+                                        >→ Board</button>
+                                    </template>
+                                    <!-- Remove from board -->
+                                    <template x-if="sub.is_on_board && sub.status !== 'done'">
+                                        <button
+                                            class="btn btn-ghost btn-xs"
+                                            @click.stop="removeFromBoard(sub)"
+                                            title="Remove from board"
+                                        >← Back</button>
+                                    </template>
+                                    <!-- Delete -->
+                                    <button
+                                        class="btn btn-danger btn-xs"
+                                        @click.stop="deleteSubtask(sub)"
+                                    >×</button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <!-- Add subtask -->
+                <div style="display:flex; gap:0.5rem; margin-bottom:1.25rem;">
+                    <input
+                        type="text"
+                        x-model="projectModal.newSubtaskTitle"
+                        placeholder="New subtask..."
+                        class="field"
+                        style="flex:1; background:var(--surface-2); border:1px solid var(--border); border-radius:0.375rem; padding:0.625rem 0.75rem; color:var(--text); font-family:inherit; font-size:0.9rem; outline:none; margin:0;"
+                        @keydown.enter="addSubtask()"
+                        @focus="$el.style.borderColor='var(--accent)'"
+                        @blur="$el.style.borderColor='var(--border)'"
+                    >
+                    <button
+                        class="btn btn-primary"
+                        @click="addSubtask()"
+                        :disabled="!projectModal.newSubtaskTitle.trim()"
+                    >+ Add</button>
+                </div>
+
+                <div class="modal-actions modal-actions-spaced">
+                    <button class="btn btn-danger" @click="deleteActivity(projectModal.project); projectModal.open = false">
+                        Delete project
+                    </button>
+                    <div class="modal-actions-group">
+                        <button class="btn btn-ghost" @click="projectModal.open = false">Close</button>
+                        <button
+                            class="btn btn-success"
+                            @click="completeProject()"
+                            :disabled="projectModal.subtasks.filter(s => s.status !== 'done').length > 0"
+                            :title="projectModal.subtasks.filter(s => s.status !== 'done').length > 0 ? 'Complete all subtasks first' : 'Complete project'"
+                        >Complete</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </template>
+
     <!-- Modal: completing activity -->
     <template x-if="completeModal.open">
         <div class="modal-overlay" @click.self="completeModal.open = false">
@@ -350,7 +516,15 @@
                     category_id: '',
                     deadlineDate: '',
                     deadlineTime: '',
+                    is_project: false,
                     tags: [],
+                },
+                projectModal: {
+                    open: false,
+                    project: null,
+                    subtasks: [],
+                    loadingSubtasks: false,
+                    newSubtaskTitle: '',
                 },
                 editModal: {
                     open: false,
@@ -454,6 +628,13 @@
                             }
                         }
 
+                        if (this.projectModal.open && item.parent_id === this.projectModal.project?.id) {
+                            const idx = this.projectModal.subtasks.findIndex(s => s.id === item.id);
+                            if (idx > -1) this.projectModal.subtasks[idx] = item;
+                            this.updateProjectCounters(this.projectModal.project.id);
+                        }
+
+
                     } else if (action === 'delete') {
                         Object.keys(this.activities).forEach(status => {
                             this.activities[status] = this.activities[status].filter(a => a.id !== item.id);
@@ -555,6 +736,7 @@
                         category_id: '',
                         deadlineDate: '',
                         deadlineTime: '',
+                        is_project: false,
                         tags: [],
                     };
                 },
@@ -576,6 +758,106 @@
                         time_spent_minutes: activity.time_spent_minutes || '',
                         tags: activity.tags ? [...activity.tags] : [],
                     };
+                },
+
+                async openProjectModal(project) {
+                    this.projectModal = {
+                        open: true,
+                        project,
+                        subtasks: [],
+                        loadingSubtasks: true,
+                        newSubtaskTitle: '',
+                    };
+                    try {
+                        const res = await axios.get(
+                            `${API_BASE}/activities/${project.id}/subtasks`,
+                            this.getAuthConfig()
+                        );
+                        this.projectModal.subtasks = res.data;
+                    } catch (e) {
+                        this.showToast('Error loading subtasks');
+                    } finally {
+                        this.projectModal.loadingSubtasks = false;
+                    }
+                },
+
+                async addSubtask() {
+                    const title = this.projectModal.newSubtaskTitle.trim();
+                    if (!title) return;
+
+                    try {
+                        const res = await axios.post(`${API_BASE}/activities`, {
+                            title,
+                            parent_id: this.projectModal.project.id,
+                            status: 'backlog',
+                        }, this.getAuthConfig());
+
+                        this.projectModal.subtasks.push(res.data);
+                        this.projectModal.newSubtaskTitle = '';
+                        this.updateProjectCounters(this.projectModal.project.id);
+                    } catch (e) {
+                        this.showToast('Error adding subtask');
+                    }
+                },
+
+                async takeToBoard(subtask) {
+                    try {
+                        const res = await axios.patch(
+                            `${API_BASE}/activities/${subtask.id}`,
+                            { is_on_board: true, status: 'backlog' },
+                            this.getAuthConfig()
+                        );
+                        const idx = this.projectModal.subtasks.findIndex(s => s.id === subtask.id);
+                        if (idx > -1) this.projectModal.subtasks[idx] = res.data;
+                        await this.loadActivities(false);
+                        this.showToast('Added to board');
+                    } catch (e) {
+                        this.showToast('Error');
+                    }
+                },
+
+                async removeFromBoard(subtask) {
+                    try {
+                        const res = await axios.patch(
+                            `${API_BASE}/activities/${subtask.id}`,
+                            { is_on_board: false },
+                            this.getAuthConfig()
+                        );
+                        const idx = this.projectModal.subtasks.findIndex(s => s.id === subtask.id);
+                        if (idx > -1) this.projectModal.subtasks[idx] = res.data;
+                        await this.loadActivities(false);
+                        this.showToast('Removed from board');
+                    } catch (e) {
+                        this.showToast('Error');
+                    }
+                },
+
+                async deleteSubtask(subtask) {
+                    if (!confirm(`Delete "${subtask.title}"?`)) return;
+                    try {
+                        await axios.delete(`${API_BASE}/activities/${subtask.id}`, this.getAuthConfig());
+                        this.projectModal.subtasks = this.projectModal.subtasks.filter(s => s.id !== subtask.id);
+                        await this.loadActivities(false);
+                        this.updateProjectCounters(this.projectModal.project.id);
+                    } catch (e) {
+                        this.showToast('Error deleting subtask');
+                    }
+                },
+
+                async completeProject() {
+                    if (!this.projectModal.project) return;
+                    this.projectModal.open = false;
+                    this.openCompleteModal(this.projectModal.project);
+                },
+
+                updateProjectCounters(projectId) {
+                    Object.keys(this.activities).forEach(status => {
+                        const project = this.activities[status].find(a => a.id === projectId);
+                        if (project) {
+                            project.subtasks_total = this.projectModal.subtasks.length;
+                            project.subtasks_done = this.projectModal.subtasks.filter(s => s.status === 'done').length;
+                        }
+                    });
                 },
 
                 openCompleteModal(activity) {
@@ -651,6 +933,7 @@
                             category_id: this.modal.category_id || null,
                             deadline: this.getDeadline(this.modal.deadlineDate, this.modal.deadlineTime),
                             status: this.modal.status,
+                            is_project: this.modal.is_project,
                             tags: this.modal.tags,
                         }, this.getAuthConfig());
 
