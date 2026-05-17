@@ -36,6 +36,12 @@
     transform: translateY(-0.125rem);
 }
 
+body.is-dragging .card:hover {
+    border-color: var(--border);
+    box-shadow: none;
+    transform: none;
+}
+
 .card-title {
     font-size: 1rem;
     font-weight: 500;
@@ -497,6 +503,10 @@
 
 .card-project:hover {
     border-color: var(--accent-yellow);
+}
+
+body.is-dragging .card-project:hover {
+    border-color: var(--accent);
 }
 
 .card-project-badge {

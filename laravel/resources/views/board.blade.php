@@ -761,27 +761,33 @@
                             ghostClass: 'sortable-ghost',
                             chosenClass: 'sortable-chosen',
                             draggable: '.card',
+                            delayOnTouchOnly: false,
+                            fallbackTolerance: 5,
 
-                            onChoose: (evt) => {
-                                evt.item.setAttribute('x-ignore', '');
-                            },
-                            onUnchoose: (evt) => {
-                                evt.item.removeAttribute('x-ignore');
+                            onStart: (evt) => {
+                                document.body.classList.add('is-dragging');
                             },
 
                             onEnd: async (evt) => {
+                                document.body.classList.remove('is-dragging');
                                 const activityId = parseInt(evt.item.dataset.id);
                                 const oldStatus = evt.from.dataset.status;
                                 const newStatus = evt.to.dataset.status;
                                 const oldIndex = evt.oldIndex;
                                 const newIndex = evt.newIndex;
 
-                                evt.item.remove();
-                                if (oldIndex !== undefined) {
-                                    evt.from.insertBefore(evt.item, evt.from.children[oldIndex]);
+                                // If nothing changed, just return
+                                if (oldStatus === newStatus && oldIndex === newIndex) {
+                                    return;
                                 }
 
-                                if (oldStatus === newStatus && oldIndex === newIndex) return;
+                                // Revert the DOM change first
+                                evt.item.remove();
+                                if (oldIndex !== undefined && evt.from.children[oldIndex]) {
+                                    evt.from.insertBefore(evt.item, evt.from.children[oldIndex]);
+                                } else {
+                                    evt.from.appendChild(evt.item);
+                                }
 
                                 const taskIndex = this.activities[oldStatus].findIndex(a => a.id === activityId);
                                 if (taskIndex > -1) {
