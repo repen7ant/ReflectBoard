@@ -75,7 +75,7 @@ class ActivityService:
         activities = result.scalars().all()
 
         project_ids = [a.id for a in activities if a.is_project]
-        counts: dict[int, tuple[int, int]] = {}  # {project_id: (total, done)}
+        counts: dict[int, list[int]] = {}  # {project_id: [total, done]}
 
         if project_ids:
             total_result = await db.execute(
@@ -136,7 +136,7 @@ class ActivityService:
             .where(Activity.parent_id == project_id, Activity.user_id == user_id)
             .order_by(Activity.position.asc())
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     @staticmethod
     async def create_activity(
@@ -332,7 +332,7 @@ class ActivityService:
 
         # Calculate subtasks counters for projects
         project_ids = [a.id for a in activities if a.is_project]
-        counts: dict[int, tuple[int, int]] = {}  # {project_id: (total, done)}
+        counts: dict[int, list[int]] = {}  # {project_id: [total, done]}
 
         if project_ids:
             total_result = await db.execute(
