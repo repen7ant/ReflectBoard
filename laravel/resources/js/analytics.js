@@ -209,10 +209,10 @@ export function analyticsPage() {
             const categories = this.data.categories.slice(0, 8); // max 8
             const maxMinutes = Math.max(1, ...categories.map(c => c.minutes));
 
-            const barHeight = 28;
-            const barGap = 10;
-            const labelWidth = 100;
-            const valueWidth = 60;
+            const barHeight = 32;
+            const barGap = 12;
+            const labelWidth = 120;
+            const valueWidth = 70;
             const padding = 10;
 
             canvas.width = canvas.parentElement.clientWidth || 400;
@@ -228,10 +228,10 @@ export function analyticsPage() {
 
                 // Метка
                 ctx.fillStyle = '#717c7c';
-                ctx.font = '11px monospace';
+                ctx.font = '16px monospace';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(
-                    cat.name.length > 10 ? cat.name.slice(0, 10) + '…' : cat.name,
+                    cat.name.length > 12 ? cat.name.slice(0, 12) + '…' : cat.name,
                     padding,
                     y + barHeight / 2
                 );
@@ -252,7 +252,7 @@ export function analyticsPage() {
 
                 // value
                 ctx.fillStyle = '#c8c093';
-                ctx.font = '10px monospace';
+                ctx.font = '16px monospace';
                 ctx.textBaseline = 'middle';
                 const timeStr = this.formatMinutes(cat.minutes);
                 ctx.fillText(timeStr, labelWidth + barMaxWidth + padding, y + barHeight / 2);
