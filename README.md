@@ -222,6 +222,7 @@ mkdir ~/reflectboard
 mkdir -p ~/reflectboard/fastapi
 mkdir -p ~/reflectboard/laravel
 mkdir -p ~/reflectboard/nginx/conf.d
+mkdir -p ~/reflectboard/mysql-conf
 ```
 
 2. Копируем `.env` файлы в соответствующие папки.
@@ -230,16 +231,22 @@ mkdir -p ~/reflectboard/nginx/conf.d
 
 4. Копируем prod-версию nginx-конфига (`nginx/conf.d/prod.conf.disable`) и переименовываем в `default.conf`.
 
-5. Логинимся в GHCR вручную (только один раз):
+5. Копируем `mysql-conf/reflectboard.cnf` — настройки MySQL (buffer pool, max_connections и т.д.) под лимит контейнера 768M.
+
+6. Логинимся в GHCR вручную (только один раз):
 
 ```bash
 echo ВАШ_GHCR_TOKEN | docker login ghcr.io -u ВАШ_GITHUB_USERNAME --password-stdin
 ```
 
-6. Делаем запуск вручную (только в первый раз):
+7. Делаем запуск вручную (только в первый раз):
 
 ```bash
 cd ~/reflectboard
 docker compose -f docker-compose.prod.yaml pull
 docker compose -f docker-compose.prod.yaml up -d
 ```
+
+### Доступ к БД с локального ПК
+
+В `docker-compose.prod.yaml` БД проброшена на `127.0.0.1:3306` — снаружи не торчит, доступ только через SSH-туннель.
