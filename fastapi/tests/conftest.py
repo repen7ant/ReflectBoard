@@ -1,6 +1,6 @@
 import os
 from typing import AsyncGenerator
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest_asyncio
 from app.db.session import Base, get_db
@@ -17,6 +17,12 @@ TEST_DATABASE_URL = os.getenv(
 )
 
 
+async def _empty_async_generator(*args, **kwargs):
+    """Async generator that yields nothing — used to mock scan_iter."""
+    return
+    yield  # noqa: unreachable — makes this an async generator
+
+
 @pytest_asyncio.fixture(autouse=True)
 def mock_redis():
     with (
@@ -27,6 +33,15 @@ def mock_redis():
         patch("app.db.redis.redis_client.setex", new_callable=AsyncMock),
         patch("app.db.redis.redis_client.incrby", new_callable=AsyncMock),
         patch("app.db.redis.redis_client.expire", new_callable=AsyncMock),
+        patch(
+            "app.db.redis.redis_client.scan_iter",
+            side_effect=_empty_async_generator,
+        ),
+        patch(
+            "app.db.redis.redis_client.mget",
+            new_callable=AsyncMock,
+            return_value=[],
+        ),
     ):
         yield
 
