@@ -69,6 +69,7 @@ export function board() {
             color: '#957fb8',
         },
         toast: { show: false, message: '' },
+        contextMenu: { open: false, x: 0, y: 0, activity: null },
         ws: null,
 
         // ─── Modules ─────────────────────────────────────────
@@ -98,7 +99,37 @@ export function board() {
             });
         },
 
-        // ─── WebSocket ────────────────────────────────────────
+        // ─── Context menu ─────────────────────────────────────
+        openContextMenu(e, activity) {
+            const menuW = 180, menuH = 120;
+            const x = e.clientX + menuW > window.innerWidth  ? e.clientX - menuW : e.clientX;
+            const y = e.clientY + menuH > window.innerHeight ? e.clientY - menuH : e.clientY;
+            this.contextMenu = { open: true, x, y, activity };
+        },
+
+        closeContextMenu() {
+            this.contextMenu.open = false;
+        },
+
+        contextMenuDelete() {
+            const a = this.contextMenu.activity;
+            this.closeContextMenu();
+            this.deleteActivity(a);
+        },
+
+        async contextMenuMoveToProject() {
+            const a = this.contextMenu.activity;
+            this.closeContextMenu();
+            try {
+                await axios.patch(`${API_BASE}/activities/${a.id}`, { is_on_board: false }, this.getAuthConfig());
+                await this.loadActivities(false);
+                this.showToast('Moved to project');
+            } catch (e) {
+                this.showToast('Error moving to project');
+            }
+        },
+
+        // ─── WebSocket ─────────────────────────────────────────
         initWs(token) {
             const url = new URL(API_BASE);
             const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:';

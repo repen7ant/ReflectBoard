@@ -89,7 +89,7 @@
                 <button class="btn btn-danger" @click="deleteActivity(editModal.activity)">Delete</button>
                 <div class="modal-actions-group">
                     <button class="btn btn-ghost" @click="editModal.open = false">Cancel</button>
-                    <button class="btn btn-primary" @click="saveActivity()">Save Changes</button>
+                    <button class="btn btn-primary" @click="updateActivity()">Save Changes</button>
                 </div>
             </div>
         </div>

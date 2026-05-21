@@ -76,6 +76,21 @@
 
     @include('components.modals.create-category')
 
+    <!-- Context menu -->
+    <template x-if="contextMenu.open">
+        <div
+            class="context-menu"
+            :style="`left:${contextMenu.x}px;top:${contextMenu.y}px`"
+            @click.outside="closeContextMenu()"
+            @keydown.escape.window="closeContextMenu()"
+        >
+            <template x-if="contextMenu.activity?.parent_id">
+                <button class="context-menu-item" @click="contextMenuMoveToProject()">Move to project</button>
+            </template>
+            <button class="context-menu-item context-menu-item--danger" @click="contextMenuDelete()">Delete</button>
+        </div>
+    </template>
+
     <!-- Toast -->
     <template x-if="toast.show">
         <div class="toast" x-text="toast.message"></div>

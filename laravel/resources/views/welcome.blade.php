@@ -20,7 +20,7 @@
                     <a href="{{ route('board') }}" class="btn btn-primary btn-link">Board</a>
                     <form method="POST" action="{{ route('logout') }}" class="landing-logout-form">
                         @csrf
-                        <button type="submit" class="btn btn-ghost">Log out</button>
+                        <button type="submit" class="btn btn-ghost" onclick="return confirm('Log out?')">Log out</button>
                     </form>
                 @else
                     <a href="{{ route('login') }}" class="btn btn-ghost btn-link">Log in</a>

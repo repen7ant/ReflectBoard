@@ -22,6 +22,7 @@ export function donePage() {
             loadingSubtasks: false,
         },
         ws: null,
+        contextMenu: { open: false, x: 0, y: 0, activity: null },
 
         // ─── Auth ─────────────────────────────────────────────
         getAuthConfig() {
@@ -199,6 +200,23 @@ export function donePage() {
             } finally {
                 this.detailModal.loadingSubtasks = false;
             }
+        },
+
+        openContextMenu(e, activity) {
+            const menuW = 180, menuH = 80;
+            const x = e.clientX + menuW > window.innerWidth  ? e.clientX - menuW : e.clientX;
+            const y = e.clientY + menuH > window.innerHeight ? e.clientY - menuH : e.clientY;
+            this.contextMenu = { open: true, x, y, activity };
+        },
+
+        closeContextMenu() {
+            this.contextMenu.open = false;
+        },
+
+        contextMenuDelete() {
+            const a = this.contextMenu.activity;
+            this.closeContextMenu();
+            this.deleteActivity(a);
         },
 
         async deleteActivity(activity) {

@@ -130,7 +130,7 @@
         <template x-if="!loading && activities.length > 0">
             <div class="activities-list">
                 <template x-for="activity in activities" :key="activity.id">
-                    <div class="activity-item" :class="{ 'activity-project': activity.is_project }" @click="openDetailModal(activity)">
+                    <div class="activity-item" :class="{ 'activity-project': activity.is_project }" @click="openDetailModal(activity)" @contextmenu.prevent="openContextMenu($event, activity)">
                         <div class="activity-header">
                             <div style="flex: 1;">
                                 <!-- Parent project badge for subtasks -->
@@ -178,6 +178,18 @@
         </template>
 
     </div>
+
+    <!-- Context menu -->
+    <template x-if="contextMenu.open">
+        <div
+            class="context-menu"
+            :style="`left:${contextMenu.x}px;top:${contextMenu.y}px`"
+            @click.outside="closeContextMenu()"
+            @keydown.escape.window="closeContextMenu()"
+        >
+            <button class="context-menu-item context-menu-item--danger" @click="contextMenuDelete()">Delete</button>
+        </div>
+    </template>
 
     <!-- Modals -->
     @include('components.modals.done-detail')

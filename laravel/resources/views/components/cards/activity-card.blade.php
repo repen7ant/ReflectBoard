@@ -1,9 +1,9 @@
 <div
-    x-data="{ activity }"
     class="card"
     :class="{ 'card-project': activity.is_project }"
     :data-id="activity.id"
     @click="activity.is_project ? openProjectModal(activity) : openEditModal(activity)"
+    @contextmenu.prevent="openContextMenu($event, activity)"
 >
     <button
         class="complete-circle"
