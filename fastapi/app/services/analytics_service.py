@@ -68,6 +68,8 @@ class AnalyticsService:
         # ── Heatmap ───────────────────────────────────────────
         heatmap: dict[str, int] = defaultdict(int)
         for a in activities:
+            if a.completed_at is None:
+                continue
             day = a.completed_at.date().isoformat()
             heatmap[day] += 1
 
