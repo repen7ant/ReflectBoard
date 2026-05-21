@@ -7,11 +7,11 @@ export function analyticsPage() {
         period: '30d',
         categories: [],
         data: {
-            overview: { total_done: 0, total_minutes: 0, streak: 0, completion_rate: 0 },
+            overview: { total_done: 0, productive_done: 0, unproductive_done: 0, total_minutes: 0, productive_minutes: 0, unproductive_minutes: 0, streak: 0, completion_rate: 0 },
             heatmap: {},
             categories: [],
             tags: [],
-            live: { total_minutes: 0, by_category: [] },
+            live: { productive_minutes: 0, unproductive_minutes: 0, by_category: [] },
         },
 
         // ─── Auth ─────────────────────────────────────────────
@@ -314,7 +314,7 @@ export function analyticsPage() {
 
         liveMaxMinutes() {
             if (!this.data.live.by_category.length) return 1;
-            return Math.max(...this.data.live.by_category.map(c => c.minutes));
+            return Math.max(...this.data.live.by_category.map(c => c.productive + c.unproductive));
         },
 
         getCategoryName(categoryId) {

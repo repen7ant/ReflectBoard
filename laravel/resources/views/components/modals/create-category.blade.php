@@ -5,7 +5,7 @@
 
             <div class="field">
                 <label>Name *</label>
-                <input type="text" x-model="categoryModal.name" placeholder="e.g. Work, Health, Study" @keydown.enter="createNewCategory()">
+                <input type="text" x-model="categoryModal.name" placeholder="e.g. Work, Health, Study" @keydown.enter="createCategory()">
             </div>
 
             <div class="field">
@@ -15,7 +15,7 @@
 
             <div class="modal-actions">
                 <button class="btn btn-ghost" @click="categoryModal.open = false">Cancel</button>
-                <button class="btn btn-primary" @click="createNewCategory()" :disabled="!categoryModal.name.trim()">Create Category</button>
+                <button class="btn btn-primary" @click="createCategory()" :disabled="!categoryModal.name.trim()">Create Category</button>
             </div>
         </div>
     </div>

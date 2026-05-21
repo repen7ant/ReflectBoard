@@ -306,8 +306,3 @@
     }
 }
 
-@media (max-width: 28rem) {
-    .overview-grid {
-        grid-template-columns: 1fr;
-    }
-}

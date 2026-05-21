@@ -61,10 +61,22 @@
                             <div class="overview-card">
                                 <div class="overview-value" x-text="data.overview.total_done"></div>
                                 <div class="overview-label">Tasks completed</div>
+                                <template x-if="data.overview.unproductive_done > 0">
+                                    <div style="margin-top:0.35rem; font-size:0.75rem; color:#717c7c; display:flex; flex-direction:column; gap:0.15rem;">
+                                        <span><span x-text="data.overview.productive_done"></span> productive</span>
+                                        <span><span x-text="data.overview.unproductive_done"></span> unproductive</span>
+                                    </div>
+                                </template>
                             </div>
                             <div class="overview-card">
                                 <div class="overview-value" x-text="formatMinutes(data.overview.total_minutes)"></div>
                                 <div class="overview-label">Total time</div>
+                                <template x-if="data.overview.unproductive_minutes > 0">
+                                    <div style="margin-top:0.35rem; font-size:0.75rem; color:#717c7c; display:flex; flex-direction:column; gap:0.15rem;">
+                                        <span><span x-text="formatMinutes(data.overview.productive_minutes)"></span> productive</span>
+                                        <span><span x-text="formatMinutes(data.overview.unproductive_minutes)"></span> unproductive</span>
+                                    </div>
+                                </template>
                             </div>
                             <div class="overview-card">
                                 <div class="overview-value">
@@ -131,9 +143,17 @@
                                 <span class="live-dot"></span>
                             </div>
 
-                            <div class="live-total">
-                                <span class="overview-value" x-text="formatMinutes(data.live.total_minutes)"></span>
-                                <span class="overview-label" style="margin-left: 0.5rem;">productive time</span>
+                            <div class="live-total" style="display:flex; flex-direction:column; gap:0.25rem;">
+                                <div>
+                                    <span class="overview-value" x-text="formatMinutes(data.live.productive_minutes)"></span>
+                                    <span class="overview-label" style="margin-left: 0.5rem;">productive</span>
+                                </div>
+                                <template x-if="data.live.unproductive_minutes > 0">
+                                    <div>
+                                        <span class="overview-value" x-text="formatMinutes(data.live.unproductive_minutes)"></span>
+                                        <span class="overview-label" style="margin-left: 0.5rem;">unproductive</span>
+                                    </div>
+                                </template>
                             </div>
 
                             <template x-if="data.live.by_category.length === 0">
@@ -148,10 +168,10 @@
                                             <div class="live-bar-wrap">
                                                 <div
                                                     class="live-bar-fill"
-                                                    :style="`width: ${Math.round(cat.minutes / liveMaxMinutes() * 100)}%`"
+                                                    :style="`width: ${Math.round((cat.productive + cat.unproductive) / liveMaxMinutes() * 100)}%`"
                                                 ></div>
                                             </div>
-                                            <div class="live-category-value" x-text="formatMinutes(cat.minutes)"></div>
+                                            <div class="live-category-value" x-text="formatMinutes(cat.productive + cat.unproductive)"></div>
                                         </div>
                                     </template>
                                 </div>

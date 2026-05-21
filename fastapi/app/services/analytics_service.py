@@ -55,6 +55,8 @@ class AnalyticsService:
 
         # ── Overview metrics ──────────────────────────────────
         total_done = len(activities)
+        productive_done = sum(1 for a in activities if a.is_productive)
+        unproductive_done = total_done - productive_done
         total_minutes = sum(a.time_spent_minutes or 0 for a in activities)
         productive_minutes = sum(a.time_spent_minutes or 0 for a in activities if a.is_productive)
         unproductive_minutes = sum(a.time_spent_minutes or 0 for a in activities if not a.is_productive)
@@ -116,6 +118,8 @@ class AnalyticsService:
         return {
             "overview": {
                 "total_done": total_done,
+                "productive_done": productive_done,
+                "unproductive_done": unproductive_done,
                 "total_minutes": total_minutes,
                 "productive_minutes": productive_minutes,
                 "unproductive_minutes": unproductive_minutes,
