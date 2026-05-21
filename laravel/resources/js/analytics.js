@@ -74,13 +74,24 @@ export function analyticsPage() {
 
             const heatmap = this.data.heatmap;
             const ctx = canvas.getContext('2d');
-            const days = this.getHeatmapDays();
-            const cellSize = 14;
-            const cellGap = 3;
-            const weekCount = Math.ceil(days.length / 7);
+            let days = this.getHeatmapDays();
+            const cellSize = 20;
+            const cellGap = 4;
             const paddingLeft = 30; // for week marks
             const paddingTop = 20;  // for month marks
 
+            // trim days to start from the week containing the first activity
+            const heatmapKeys = Object.keys(heatmap).sort();
+            if (heatmapKeys.length > 0) {
+                const firstActivity = heatmapKeys[0];
+                const idx = days.findIndex(d => d >= firstActivity);
+                if (idx > 0) {
+                    const weekStart = Math.floor(idx / 7) * 7;
+                    days = days.slice(weekStart);
+                }
+            }
+
+            const weekCount = Math.ceil(days.length / 7);
             canvas.width = paddingLeft + weekCount * (cellSize + cellGap);
             canvas.height = paddingTop + 7 * (cellSize + cellGap);
 
@@ -95,7 +106,7 @@ export function analyticsPage() {
             // week marks
             const dayLabels = ['Mon', '', 'Wed', '', 'Fri', '', 'Sun'];
             ctx.fillStyle = '#717c7c';
-            ctx.font = '9px monospace';
+            ctx.font = '13px monospace';
             dayLabels.forEach((label, i) => {
                 if (label) {
                     ctx.fillText(label, 0, paddingTop + i * (cellSize + cellGap) + cellSize - 3);
@@ -104,6 +115,10 @@ export function analyticsPage() {
 
             // month marks
             let lastMonth = null;
+            let lastLabelX = -Infinity;
+            ctx.fillStyle = '#717c7c';
+            ctx.font = '13px monospace';
+            ctx.textBaseline = 'top';
             days.forEach((day, i) => {
                 const week = Math.floor(i / 7);
                 const month = day.slice(5, 7);
@@ -111,11 +126,17 @@ export function analyticsPage() {
                     lastMonth = month;
                     const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
                     const label = monthNames[parseInt(month) - 1];
-                    ctx.fillStyle = '#717c7c';
-                    ctx.font = '9px monospace';
-                    ctx.fillText(label, paddingLeft + week * (cellSize + cellGap), 10);
+                    // if month starts mid-week, shift label to next column so it aligns with cells fully in new month
+                    const dayOfWeek = i % 7;
+                    const labelWeek = dayOfWeek === 0 ? week : week + 1;
+                    const x = paddingLeft + labelWeek * (cellSize + cellGap);
+                    if (x - lastLabelX >= 32 && x < canvas.width) {
+                        ctx.fillText(label, x, 4);
+                        lastLabelX = x;
+                    }
                 }
             });
+            ctx.textBaseline = 'alphabetic';
 
             // cells
             days.forEach((day, i) => {
