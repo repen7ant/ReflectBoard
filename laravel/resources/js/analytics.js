@@ -5,6 +5,7 @@ export function analyticsPage() {
         // ─── State ───────────────────────────────────────────
         loading: true,
         period: '30d',
+        categories: [],
         data: {
             overview: { total_done: 0, total_minutes: 0, streak: 0, completion_rate: 0 },
             heatmap: {},
@@ -26,12 +27,24 @@ export function analyticsPage() {
                 window.location.href = '/login';
                 return;
             }
+
+            // Load categories first
+            await this.loadCategories();
             await this.load();
 
             // Listen for new activities from FAB
             window.addEventListener('fab:captured', () => {
                 this.load();
             });
+        },
+
+        async loadCategories() {
+            try {
+                const res = await axios.get(`${API_BASE}/categories`, this.getAuthConfig());
+                this.categories = res.data;
+            } catch (e) {
+                console.error('Error loading categories', e);
+            }
         },
 
         // ─── Data ─────────────────────────────────────────────
@@ -283,6 +296,12 @@ export function analyticsPage() {
         liveMaxMinutes() {
             if (!this.data.live.by_category.length) return 1;
             return Math.max(...this.data.live.by_category.map(c => c.minutes));
+        },
+
+        getCategoryName(categoryId) {
+            if (!categoryId) return 'Uncategorized';
+            const cat = this.categories.find(c => c.id == categoryId);
+            return cat ? cat.name : `Category ${categoryId}`;
         },
     };
 }

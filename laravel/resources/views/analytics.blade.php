@@ -144,7 +144,7 @@
                                 <div class="live-categories">
                                     <template x-for="cat in data.live.by_category" :key="cat.category_id">
                                         <div class="live-category-row">
-                                            <div class="live-category-label" x-text="cat.category_id ?? 'Uncategorized'"></div>
+                                            <div class="live-category-label" x-text="getCategoryName(cat.category_id)"></div>
                                             <div class="live-bar-wrap">
                                                 <div
                                                     class="live-bar-fill"
