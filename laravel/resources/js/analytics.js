@@ -200,6 +200,28 @@ export function analyticsPage() {
             if (tooltip) tooltip.style.display = 'none';
         },
 
+        tagMouseEnter(e, tag, count) {
+            const tooltip = document.getElementById('heatmap-tooltip');
+            if (!tooltip) return;
+            const times = count === 1 ? '1 time' : `${count} times`;
+            tooltip.textContent = `#${tag} — ${times}`;
+            tooltip.style.display = 'block';
+            tooltip.style.left = `${e.clientX + 10}px`;
+            tooltip.style.top = `${e.clientY + 10}px`;
+        },
+
+        tagMouseMove(e) {
+            const tooltip = document.getElementById('heatmap-tooltip');
+            if (!tooltip || tooltip.style.display === 'none') return;
+            tooltip.style.left = `${e.clientX + 10}px`;
+            tooltip.style.top = `${e.clientY + 10}px`;
+        },
+
+        tagMouseLeave() {
+            const tooltip = document.getElementById('heatmap-tooltip');
+            if (tooltip) tooltip.style.display = 'none';
+        },
+
         getHeatmapDays() {
             const days = [];
             const periodDays = this.period === '7d' ? 7 : this.period === '30d' ? 30 : this.period === '90d' ? 90 : 365;

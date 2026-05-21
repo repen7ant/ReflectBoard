@@ -128,7 +128,9 @@
                                             <span
                                                 class="tag-cloud-item"
                                                 :style="`font-size: ${getTagSize(t.count)}rem; opacity: ${getTagOpacity(t.count)};`"
-                                                :title="`${t.tag} — ${t.count} times`"
+                                                @mouseenter="tagMouseEnter($event, t.tag, t.count)"
+                                                @mousemove="tagMouseMove($event)"
+                                                @mouseleave="tagMouseLeave()"
                                             >#<span x-text="t.tag"></span></span>
                                         </template>
                                     </div>
