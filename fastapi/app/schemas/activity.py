@@ -52,6 +52,8 @@ class ActivityCreate(BaseModel):
     parent_id: int | None = None
     title: str
     description: str | None = None
+    reflection_text: str | None = None
+    time_spent_minutes: int | None = None
     status: Status = Status.backlog
     is_project: bool = False
     is_quick_capture: bool = False
