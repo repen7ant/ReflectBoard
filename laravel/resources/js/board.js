@@ -299,8 +299,17 @@ export function board() {
             return date.toLocaleString('en-US', { ...opts, hour: '2-digit', minute: '2-digit' });
         },
 
-        isOverdue(dt) {
-            return dt && new Date(dt) < new Date();
+        deadlineStatus(dt) {
+            if (!dt) return '';
+            const now = new Date();
+            const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const d = new Date(dt);
+            const dMidnight = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+            if (dMidnight < todayMidnight) return 'overdue';
+            if (dMidnight.getTime() === todayMidnight.getTime()) return 'today';
+            const soonMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 4);
+            if (dMidnight < soonMidnight) return 'soon';
+            return '';
         },
 
         showToast(message) {

@@ -112,6 +112,7 @@ export function projectMethods(API_BASE) {
                     deadline,
                     tags: this.projectModal.tags,
                 }, this.getAuthConfig());
+                this.projectModal.open = false;
                 await this.loadActivities(false);
                 this.showToast('Project updated');
             } catch (e) {

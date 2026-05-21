@@ -1,6 +1,6 @@
 <div
     class="card"
-    :class="{ 'card-project': activity.is_project }"
+    :class="{ 'card-project': activity.is_project, [deadlineStatus(activity.deadline)]: activity.deadline }"
     :data-id="activity.id"
     @click="activity.is_project ? openProjectModal(activity) : openEditModal(activity)"
     @contextmenu.prevent="openContextMenu($event, activity)"
@@ -34,7 +34,7 @@
     <template x-if="activity.deadline">
         <div
             class="card-deadline"
-            :class="isOverdue(activity.deadline) ? 'overdue' : ''"
+            :class="deadlineStatus(activity.deadline)"
             x-text="formatDate(activity.deadline, false)"
         ></div>
     </template>
