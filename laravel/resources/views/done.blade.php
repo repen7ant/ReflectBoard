@@ -29,6 +29,7 @@
 
         <!-- Filters Panel -->
         <div class="filters-panel">
+            <!-- Row 1: content filters -->
             <div class="filters-grid">
                 <!-- Search -->
                 <div class="filter-group">
@@ -53,25 +54,35 @@
                     </select>
                 </div>
 
-                <!-- Date Range -->
-                <div style="display: flex; gap: 0.5rem;">
-                    <div class="filter-group" style="flex: 1; min-width: 0;">
-                        <label class="filter-label">From</label>
-                        <input type="date" class="filter-input" x-model="filters.date_from" @change="applyFilters()" style="width: 100%; box-sizing: border-box;">
-                    </div>
-                    <div class="filter-group" style="flex: 1; min-width: 0;">
-                        <label class="filter-label">To</label>
-                        <input type="date" class="filter-input" x-model="filters.date_to" @change="applyFilters()" style="width: 100%; box-sizing: border-box;">
-                    </div>
+                <!-- Productivity -->
+                <div class="filter-group">
+                    <label class="filter-label">Productivity</label>
+                    <select class="filter-input" x-model="filters.productivity" @change="applyProductivityFilter()">
+                        <option value="">All</option>
+                        <option value="productive">Productive</option>
+                        <option value="unproductive">Unproductive</option>
+                    </select>
                 </div>
             </div>
 
-            <!-- Date Presets -->
-            <div class="date-presets">
-                <button class="preset-btn" :class="{ 'active': activePreset === 'today' }"  @click="setDatePreset('today')">Today</button>
-                <button class="preset-btn" :class="{ 'active': activePreset === '7days' }"  @click="setDatePreset('7days')">7 Days</button>
-                <button class="preset-btn" :class="{ 'active': activePreset === '30days' }" @click="setDatePreset('30days')">30 Days</button>
-                <button class="preset-btn" :class="{ 'active': activePreset === 'all' }"    @click="setDatePreset('all')">All Time</button>
+            <!-- Row 2: date filters -->
+            <div class="date-row">
+                <div class="date-presets">
+                    <button class="preset-btn" :class="{ 'active': activePreset === 'today' }"  @click="setDatePreset('today')">Today</button>
+                    <button class="preset-btn" :class="{ 'active': activePreset === '7days' }"  @click="setDatePreset('7days')">7 Days</button>
+                    <button class="preset-btn" :class="{ 'active': activePreset === '30days' }" @click="setDatePreset('30days')">30 Days</button>
+                    <button class="preset-btn" :class="{ 'active': activePreset === 'all' }"    @click="setDatePreset('all')">All Time</button>
+                </div>
+                <div class="date-inputs">
+                    <div class="filter-group">
+                        <label class="filter-label">From</label>
+                        <input type="date" class="filter-input" x-model="filters.date_from" @change="applyFilters()">
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">To</label>
+                        <input type="date" class="filter-input" x-model="filters.date_to" @change="applyFilters()">
+                    </div>
+                </div>
             </div>
 
             <!-- Active Filters -->
@@ -92,6 +103,12 @@
                     <div class="filter-badge">
                         <span>Date: <span x-text="formatDateRange()"></span></span>
                         <span class="filter-badge-remove" @click="clearDateFilter()">×</span>
+                    </div>
+                </template>
+                <template x-if="filters.productivity">
+                    <div class="filter-badge">
+                        <span x-text="filters.productivity === 'productive' ? 'Productive only' : 'Unproductive only'"></span>
+                        <span class="filter-badge-remove" @click="filters.productivity = ''; applyProductivityFilter()">×</span>
                     </div>
                 </template>
                 <button class="clear-all-btn" @click="clearAllFilters()">Clear All</button>
@@ -146,6 +163,9 @@
                                 </template>
                                 <template x-if="activity.deadline">
                                     <div class="activity-deadline" x-text="'Due: ' + formatDate(activity.deadline)"></div>
+                                </template>
+                                <template x-if="activity.is_productive === false">
+                                    <div class="unproductive-badge">unproductive</div>
                                 </template>
                             </div>
                         </div>

@@ -5,12 +5,14 @@ export function donePage() {
         // ─── State ───────────────────────────────────────────
         loading: true,
         activities: [],
+        allActivities: [],
         categories: [],
         filters: {
             search: '',
             category_id: '',
             date_from: '',
             date_to: '',
+            productivity: '',
         },
         activePreset: '30days',
         detailModal: {
@@ -96,7 +98,8 @@ export function donePage() {
                     ...this.getAuthConfig(),
                     params,
                 });
-                this.activities = res.data;
+                this.allActivities = res.data;
+                this.applyProductivityFilter();
             } catch (e) {
                 console.error('Error loading activities', e);
             } finally {
@@ -131,12 +134,23 @@ export function donePage() {
             this.applyFilters();
         },
 
+        applyProductivityFilter() {
+            if (!this.filters.productivity) {
+                this.activities = this.allActivities;
+            } else {
+                const wantProductive = this.filters.productivity === 'productive';
+                this.activities = this.allActivities.filter(a =>
+                    wantProductive ? a.is_productive !== false : a.is_productive === false
+                );
+            }
+        },
+
         hasActiveFilters() {
-            return this.filters.search || this.filters.category_id || this.filters.date_from || this.filters.date_to;
+            return this.filters.search || this.filters.category_id || this.filters.date_from || this.filters.date_to || this.filters.productivity;
         },
 
         clearAllFilters() {
-            this.filters = { search: '', category_id: '', date_from: '', date_to: '' };
+            this.filters = { search: '', category_id: '', date_from: '', date_to: '', productivity: '' };
             this.activePreset = '';
             this.applyFilters();
         },

@@ -1,6 +1,6 @@
 import os
 from typing import AsyncGenerator
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest_asyncio
 from app.db.session import Base, get_db
