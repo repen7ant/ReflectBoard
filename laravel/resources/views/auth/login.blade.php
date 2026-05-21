@@ -11,7 +11,7 @@
     <div class="auth-container">
         <div class="modal" style="max-height: none;">
             <div style="text-align: center; margin-bottom: 2rem;">
-                <img src="/icon.svg" alt="ReflectBoard" style="width: 4rem; height: 4rem; margin: 0 auto 1rem;">
+                <a href="/"><img src="/icon.svg" alt="ReflectBoard" style="width: 4rem; height: 4rem; margin: 0 auto 1rem;"></a>
                 <div class="modal-title" style="margin-bottom: 0;">Welcome back</div>
             </div>
 
