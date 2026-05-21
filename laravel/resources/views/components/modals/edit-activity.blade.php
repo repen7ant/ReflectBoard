@@ -1,5 +1,5 @@
 <template x-if="editModal.open">
-    <div class="modal-overlay" @click.self="editModal.open = false">
+    <div class="modal-overlay" @mousedown.self="$el._md=true" @click.self="$el._md&&(editModal.open=false);$el._md=false">
         <div class="modal">
             <button class="modal-close" @click="editModal.open = false">&times;</button>
             <div class="modal-header modal-header-center">

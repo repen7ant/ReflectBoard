@@ -1,5 +1,5 @@
 <template x-if="modal.open">
-    <div class="modal-overlay" @click.self="modal.open = false">
+    <div class="modal-overlay" @mousedown.self="$el._md=true" @click.self="$el._md&&(modal.open=false);$el._md=false">
         <div class="modal">
             <button class="modal-close" @click="modal.open = false">&times;</button>
             <div class="modal-title">New Task — <span x-text="columnLabel(modal.status)"></span></div>

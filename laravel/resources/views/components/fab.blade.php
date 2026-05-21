@@ -11,7 +11,7 @@
 
     <!-- Modal -->
     <template x-if="open">
-        <div class="modal-overlay" @click.self="close()">
+        <div class="modal-overlay" @mousedown.self="$el._md=true" @click.self="$el._md&&close();$el._md=false">
             <div class="modal">
                 <button class="modal-close" @click="close()">&times;</button>
                 <div class="modal-title">Quick Capture</div>

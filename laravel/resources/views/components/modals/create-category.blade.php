@@ -1,5 +1,5 @@
 <template x-if="categoryModal.open">
-    <div class="modal-overlay" @click.self="categoryModal.open = false">
+    <div class="modal-overlay" @mousedown.self="$el._md=true" @click.self="$el._md&&(categoryModal.open=false);$el._md=false">
         <div class="modal modal-narrow">
             <button class="modal-close" @click="categoryModal.open = false">&times;</button>
             <div class="modal-title">New Category</div>
