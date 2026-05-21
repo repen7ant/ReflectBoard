@@ -25,6 +25,8 @@ def mock_redis():
             "app.db.redis.redis_client.get", new_callable=AsyncMock, return_value=None
         ),
         patch("app.db.redis.redis_client.setex", new_callable=AsyncMock),
+        patch("app.db.redis.redis_client.incrby", new_callable=AsyncMock),
+        patch("app.db.redis.redis_client.expire", new_callable=AsyncMock),
     ):
         yield
 

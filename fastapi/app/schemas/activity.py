@@ -22,6 +22,7 @@ class ActivityOut(BaseModel):
     is_project: bool
     is_on_board: bool
     is_quick_capture: bool
+    is_productive: bool
     deadline: datetime | None
     tags: list[str] | None = None
     completed_at: datetime | None
@@ -45,6 +46,7 @@ class ActivityUpdate(BaseModel):
     deadline: datetime | None = None
     tags: list[str] | None = None
     is_on_board: bool | None = None
+    is_productive: bool | None = None
 
 
 class ActivityCreate(BaseModel):
@@ -57,5 +59,6 @@ class ActivityCreate(BaseModel):
     status: Status = Status.backlog
     is_project: bool = False
     is_quick_capture: bool = False
+    is_productive: bool = True
     deadline: datetime | None = None
     tags: list[str] = Field(default_factory=list)
