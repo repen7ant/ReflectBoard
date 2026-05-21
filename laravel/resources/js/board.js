@@ -1,6 +1,12 @@
 import { modalMethods } from './board/modals.js';
 import { activityMethods } from './board/activities.js';
 import { projectMethods } from './board/projects.js';
+import { getAuthConfig, requireAuthOrRedirect, initWebSocket } from './shared/api.js';
+import { formatDate } from './shared/format.js';
+import { deadlineStatus } from './shared/deadline.js';
+
+const TOAST_MS = 2500;
+const NO_HOVER_MS = 100;
 
 export function board() {
     const API_BASE = window.API_BASE;
@@ -77,26 +83,20 @@ export function board() {
         ...activityMethods(API_BASE),
         ...projectMethods(API_BASE),
 
-        // ─── Auth ─────────────────────────────────────────────
-        getAuthConfig() {
-            const token = document.querySelector('meta[name="api-token"]')?.content;
-            return { headers: { Authorization: `Bearer ${token}` } };
-        },
+        // ─── Shared helpers ───────────────────────────────────
+        getAuthConfig,
+        formatDate,
+        deadlineStatus,
 
         // ─── Init ─────────────────────────────────────────────
         async init() {
-            const token = document.querySelector('meta[name="api-token"]')?.content;
-            if (!token) {
-                window.location.href = '/login';
-                return;
-            }
+            const token = requireAuthOrRedirect();
+            if (!token) return;
             await this.loadActivities();
             await this.loadCategories();
             this.$nextTick(() => this.initSortable());
-            this.initWs(token);
-            window.addEventListener('fab:captured', () => {
-                this.showToast('Captured!');
-            });
+            this.ws = initWebSocket(API_BASE, token, (payload) => this.handleRemoteUpdate(payload));
+            window.addEventListener('fab:captured', () => this.showToast('Captured!'));
         },
 
         // ─── Context menu ─────────────────────────────────────
@@ -129,71 +129,65 @@ export function board() {
             }
         },
 
-        // ─── WebSocket ─────────────────────────────────────────
-        initWs(token) {
-            const url = new URL(API_BASE);
-            const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${wsProtocol}//${url.host}/api/v1/ws?token=${token}`;
-
-            this.ws = new WebSocket(wsUrl);
-            this.ws.onmessage = (event) => {
-                this.handleRemoteUpdate(JSON.parse(event.data));
-            };
-            this.ws.onclose = () => {
-                setTimeout(() => this.initWs(token), 3000);
-            };
+        // ─── WebSocket dispatch ───────────────────────────────
+        handleRemoteUpdate(payload) {
+            const { action, data: item } = payload;
+            switch (action) {
+                case 'create':  return this.handleWsCreate(item);
+                case 'update':  return this.handleWsUpdate(item);
+                case 'delete':  return this.handleWsDelete(item);
+                case 'reorder': return this.loadActivities(false);
+            }
         },
 
-        handleRemoteUpdate(payload) {
-            const action = payload.action;
-            const item = payload.data;
+        handleWsCreate(item) {
+            // Subtasks not on board are not shown
+            if (item.parent_id && !item.is_on_board) return;
+            const col = this.activities[item.status];
+            if (!col) return;
+            if (!col.find(a => a.id === item.id)) col.push(item);
+        },
 
-            if (action === 'create') {
-                if (item.parent_id && !item.is_on_board) return;
-                if (this.activities[item.status]) {
-                    const exists = this.activities[item.status].find(a => a.id === item.id);
-                    if (!exists) this.activities[item.status].push(item);
-                }
-
-            } else if (action === 'update') {
-                if (item.parent_id && !item.is_on_board) {
-                    Object.keys(this.activities).forEach(s => {
-                        this.activities[s] = this.activities[s].filter(a => a.id !== item.id);
-                    });
-                    return;
-                }
-
-                let found = false;
-                const targetCol = this.activities[item.status];
-                if (targetCol) {
-                    const idx = targetCol.findIndex(a => a.id === item.id);
-                    if (idx > -1) { targetCol[idx] = item; found = true; }
-                }
-                if (!found) {
-                    Object.keys(this.activities).forEach(s => {
-                        this.activities[s] = this.activities[s].filter(a => a.id !== item.id);
-                    });
-                    if (this.activities[item.status]) this.activities[item.status].push(item);
-                }
-
-                if (this.projectModal.open && item.parent_id === this.projectModal.project?.id) {
-                    const idx = this.projectModal.subtasks.findIndex(s => s.id === item.id);
-                    if (idx > -1) this.projectModal.subtasks[idx] = item;
-                    this.updateProjectCounters(this.projectModal.project.id);
-                }
-
-            } else if (action === 'delete') {
-                Object.keys(this.activities).forEach(s => {
-                    this.activities[s] = this.activities[s].filter(a => a.id !== item.id);
-                });
-                if (this.projectModal.open && item.parent_id === this.projectModal.project?.id) {
-                    this.projectModal.subtasks = this.projectModal.subtasks.filter(s => s.id !== item.id);
-                    this.updateProjectCounters(this.projectModal.project.id);
-                }
-
-            } else if (action === 'reorder') {
-                this.loadActivities(false);
+        handleWsUpdate(item) {
+            // Subtask removed from board → drop from all columns
+            if (item.parent_id && !item.is_on_board) {
+                this.removeFromAllColumns(item.id);
+                return;
             }
+
+            const targetCol = this.activities[item.status];
+            const idx = targetCol ? targetCol.findIndex(a => a.id === item.id) : -1;
+
+            if (idx > -1) {
+                targetCol[idx] = item;
+            } else {
+                // Status changed — remove from old column, add to new
+                this.removeFromAllColumns(item.id);
+                if (targetCol) targetCol.push(item);
+            }
+
+            this.syncProjectModalSubtask(item);
+        },
+
+        handleWsDelete(item) {
+            this.removeFromAllColumns(item.id);
+            if (this.projectModal.open && item.parent_id === this.projectModal.project?.id) {
+                this.projectModal.subtasks = this.projectModal.subtasks.filter(s => s.id !== item.id);
+                this.updateProjectCounters(this.projectModal.project.id);
+            }
+        },
+
+        removeFromAllColumns(id) {
+            Object.keys(this.activities).forEach(s => {
+                this.activities[s] = this.activities[s].filter(a => a.id !== id);
+            });
+        },
+
+        syncProjectModalSubtask(item) {
+            if (!this.projectModal.open || item.parent_id !== this.projectModal.project?.id) return;
+            const idx = this.projectModal.subtasks.findIndex(s => s.id === item.id);
+            if (idx > -1) this.projectModal.subtasks[idx] = item;
+            this.updateProjectCounters(this.projectModal.project.id);
         },
 
         // ─── Data loading ─────────────────────────────────────
@@ -235,53 +229,54 @@ export function board() {
                     chosenClass: 'sortable-chosen',
                     draggable: '.card',
                     fallbackTolerance: 5,
-
-                    onStart: (evt) => {
+                    onStart: () => {
                         document.body.classList.add('is-dragging');
                         window.Alpine?.deferMutations();
                     },
-
-                    onEnd: async (evt) => {
-                        window.Alpine?.flushAndStopDeferringMutations();
-                        document.body.classList.remove('is-dragging');
-                        document.body.classList.add('no-hover');
-                        setTimeout(() => document.body.classList.remove('no-hover'), 100);
-
-                        const activityId = parseInt(evt.item.dataset.id);
-                        const oldStatus = evt.from.dataset.status;
-                        const newStatus = evt.to.dataset.status;
-                        const oldIndex = evt.oldIndex;
-                        const newIndex = evt.newIndex;
-
-                        if (oldStatus === newStatus && oldIndex === newIndex) return;
-
-                        evt.item.remove();
-                        if (evt.from.children[oldIndex]) {
-                            evt.from.insertBefore(evt.item, evt.from.children[oldIndex]);
-                        } else {
-                            evt.from.appendChild(evt.item);
-                        }
-
-                        const taskIndex = this.activities[oldStatus].findIndex(a => a.id === activityId);
-                        if (taskIndex > -1) {
-                            const [task] = this.activities[oldStatus].splice(taskIndex, 1);
-                            task.status = newStatus;
-                            this.activities[newStatus].splice(newIndex, 0, task);
-                        }
-
-                        try {
-                            await axios.post(`${API_BASE}/activities/reorder`, {
-                                activity_id: activityId,
-                                new_status: newStatus,
-                                ordered_ids: this.activities[newStatus].map(a => a.id),
-                            }, this.getAuthConfig());
-                        } catch (e) {
-                            this.showToast('Error moving activity');
-                            await this.loadActivities(false);
-                        }
-                    },
+                    onEnd: (evt) => this.onSortEnd(evt),
                 });
             });
+        },
+
+        async onSortEnd(evt) {
+            window.Alpine?.flushAndStopDeferringMutations();
+            document.body.classList.remove('is-dragging');
+            document.body.classList.add('no-hover');
+            setTimeout(() => document.body.classList.remove('no-hover'), NO_HOVER_MS);
+
+            const activityId = parseInt(evt.item.dataset.id);
+            const oldStatus = evt.from.dataset.status;
+            const newStatus = evt.to.dataset.status;
+            const oldIndex = evt.oldIndex;
+            const newIndex = evt.newIndex;
+
+            if (oldStatus === newStatus && oldIndex === newIndex) return;
+
+            // Return DOM to original position; Alpine will re-render from state
+            evt.item.remove();
+            if (evt.from.children[oldIndex]) {
+                evt.from.insertBefore(evt.item, evt.from.children[oldIndex]);
+            } else {
+                evt.from.appendChild(evt.item);
+            }
+
+            const taskIndex = this.activities[oldStatus].findIndex(a => a.id === activityId);
+            if (taskIndex > -1) {
+                const [task] = this.activities[oldStatus].splice(taskIndex, 1);
+                task.status = newStatus;
+                this.activities[newStatus].splice(newIndex, 0, task);
+            }
+
+            try {
+                await axios.post(`${API_BASE}/activities/reorder`, {
+                    activity_id: activityId,
+                    new_status: newStatus,
+                    ordered_ids: this.activities[newStatus].map(a => a.id),
+                }, this.getAuthConfig());
+            } catch (e) {
+                this.showToast('Error moving activity');
+                await this.loadActivities(false);
+            }
         },
 
         // ─── Utilities ────────────────────────────────────────
@@ -289,32 +284,9 @@ export function board() {
             return this.columns.find(c => c.status === status)?.label ?? status;
         },
 
-        formatDate(dt, showYear = false) {
-            if (!dt) return '';
-            const date = new Date(dt);
-            if (isNaN(date.getTime())) return dt;
-            const opts = { day: 'numeric', month: 'short', ...(showYear ? { year: 'numeric' } : {}) };
-            const isDateOnly = dt.length === 10 || (date.getHours() === 0 && date.getMinutes() === 0 && date.getSeconds() === 0);
-            if (isDateOnly) return date.toLocaleDateString('en-US', opts);
-            return date.toLocaleString('en-US', { ...opts, hour: '2-digit', minute: '2-digit' });
-        },
-
-        deadlineStatus(dt) {
-            if (!dt) return '';
-            const now = new Date();
-            const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            const d = new Date(dt);
-            const dMidnight = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-            if (dMidnight < todayMidnight) return 'overdue';
-            if (dMidnight.getTime() === todayMidnight.getTime()) return 'today';
-            const soonMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 4);
-            if (dMidnight < soonMidnight) return 'soon';
-            return '';
-        },
-
         showToast(message) {
             this.toast = { show: true, message };
-            setTimeout(() => this.toast.show = false, 2500);
+            setTimeout(() => this.toast.show = false, TOAST_MS);
         },
     };
 }

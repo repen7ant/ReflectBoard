@@ -5,7 +5,7 @@
             <div class="modal-header modal-header-center">
                 <div class="modal-header-content">
                     <div class="detail-label">Created</div>
-                    <div class="detail-value" x-text="formatDate(editModal.activity?.created_at, true)"></div>
+                    <div class="detail-value" x-text="formatDate(editModal.activity?.created_at, { withTime: true })"></div>
                 </div>
             </div>
 

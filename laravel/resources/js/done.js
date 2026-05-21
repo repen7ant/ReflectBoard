@@ -1,3 +1,6 @@
+import { getAuthConfig, requireAuthOrRedirect, initWebSocket } from './shared/api.js';
+import { formatDate, formatMinutes } from './shared/format.js';
+
 export function donePage() {
     const API_BASE = window.API_BASE;
 
@@ -24,40 +27,22 @@ export function donePage() {
         ws: null,
         contextMenu: { open: false, x: 0, y: 0, activity: null },
 
-        // ─── Auth ─────────────────────────────────────────────
-        getAuthConfig() {
-            const token = document.querySelector('meta[name="api-token"]')?.content;
-            return { headers: { Authorization: `Bearer ${token}` } };
-        },
+        // ─── Shared helpers ───────────────────────────────────
+        getAuthConfig,
+        formatDate,
+        formatMinutes,
 
         // ─── Init ─────────────────────────────────────────────
         async init() {
-            const token = document.querySelector('meta[name="api-token"]')?.content;
-            if (!token) {
-                window.location.href = '/login';
-                return;
-            }
+            const token = requireAuthOrRedirect();
+            if (!token) return;
             await this.loadCategories();
             this.setDatePreset('30days');
-            this.initWs(token);
+            this.ws = initWebSocket(API_BASE, token, (payload) => this.handleRemoteUpdate(payload));
             window.addEventListener('fab:captured', () => this.applyFilters());
         },
 
         // ─── WebSocket ────────────────────────────────────────
-        initWs(token) {
-            const url = new URL(API_BASE);
-            const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${wsProtocol}//${url.host}/api/v1/ws?token=${token}`;
-
-            this.ws = new WebSocket(wsUrl);
-            this.ws.onmessage = (event) => {
-                this.handleRemoteUpdate(JSON.parse(event.data));
-            };
-            this.ws.onclose = () => {
-                setTimeout(() => this.initWs(token), 3000);
-            };
-        },
-
         handleRemoteUpdate(payload) {
             const { action, data: item } = payload;
 
@@ -231,26 +216,6 @@ export function donePage() {
         },
 
         // ─── Utilities ────────────────────────────────────────
-        formatDate(dateStr, withTime = false) {
-            if (!dateStr) return '';
-            const d = new Date(dateStr);
-            const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            if (withTime) {
-                const time = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-                return `${date} at ${time}`;
-            }
-            return date;
-        },
-
-        formatTime(minutes) {
-            if (!minutes) return '';
-            const h = Math.floor(minutes / 60);
-            const m = minutes % 60;
-            if (h > 0 && m > 0) return `${h}h ${m}m`;
-            if (h > 0)          return `${h}h`;
-            return `${m}m`;
-        },
-
         pluralizeSubtasks(count) {
             if (count === 1) return '1 subtask';
             return `${count} subtasks`;

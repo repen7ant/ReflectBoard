@@ -1,12 +1,10 @@
+import { buildDeadline } from '../shared/deadline.js';
+
 export function activityMethods(API_BASE) {
     return {
         async createActivity() {
             const title = this.modal.title.trim();
             if (!title) return;
-
-            const deadline = this.modal.deadlineDate
-                ? `${this.modal.deadlineDate}T${this.modal.deadlineTime || '00:00'}:00`
-                : null;
 
             try {
                 await axios.post(`${API_BASE}/activities`, {
@@ -14,7 +12,7 @@ export function activityMethods(API_BASE) {
                     description: this.modal.description || null,
                     category_id: this.modal.category_id || null,
                     status: this.modal.status,
-                    deadline,
+                    deadline: buildDeadline(this.modal.deadlineDate, this.modal.deadlineTime),
                     is_project: this.modal.is_project,
                     is_productive: this.modal.is_productive,
                     tags: this.modal.tags,
@@ -31,16 +29,12 @@ export function activityMethods(API_BASE) {
             const title = this.editModal.title.trim();
             if (!title) return;
 
-            const deadline = this.editModal.deadlineDate
-                ? `${this.editModal.deadlineDate}T${this.editModal.deadlineTime || '00:00'}:00`
-                : null;
-
             try {
                 await axios.patch(`${API_BASE}/activities/${this.editModal.activity.id}`, {
                     title,
                     description: this.editModal.description || null,
                     category_id: this.editModal.category_id || null,
-                    deadline,
+                    deadline: buildDeadline(this.editModal.deadlineDate, this.editModal.deadlineTime),
                     reflection_text: this.editModal.reflection_text || null,
                     time_spent_minutes: parseInt(this.editModal.time_spent_minutes) || null,
                     tags: this.editModal.tags,

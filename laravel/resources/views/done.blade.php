@@ -159,7 +159,7 @@
                             <div class="activity-meta">
                                 <div class="activity-date" x-text="formatDate(activity.completed_at)"></div>
                                 <template x-if="activity.time_spent_minutes">
-                                    <div class="activity-time" x-text="formatTime(activity.time_spent_minutes)"></div>
+                                    <div class="activity-time" x-text="formatMinutes(activity.time_spent_minutes)"></div>
                                 </template>
                                 <template x-if="activity.deadline">
                                     <div class="activity-deadline" x-text="'Due: ' + formatDate(activity.deadline)"></div>

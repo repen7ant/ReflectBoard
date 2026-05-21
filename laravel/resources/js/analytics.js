@@ -1,3 +1,6 @@
+import { getAuthConfig, requireAuthOrRedirect, initWebSocket } from './shared/api.js';
+import { formatMinutes } from './shared/format.js';
+
 export function analyticsPage() {
     const API_BASE = window.API_BASE;
 
@@ -13,27 +16,26 @@ export function analyticsPage() {
             tags: [],
             live: { productive_minutes: 0, unproductive_minutes: 0, by_category: [] },
         },
+        // Cached min/max for tag cloud sizing — recomputed when data.tags changes
+        tagBounds: { min: 0, max: 0 },
 
-        // ─── Auth ─────────────────────────────────────────────
-        getAuthConfig() {
-            const token = document.querySelector('meta[name="api-token"]')?.content;
-            return { headers: { Authorization: `Bearer ${token}` } };
-        },
+        // ─── Shared helpers ───────────────────────────────────
+        getAuthConfig,
+        formatMinutes,
 
         // ─── Init ─────────────────────────────────────────────
         async init() {
-            const token = document.querySelector('meta[name="api-token"]')?.content;
-            if (!token) {
-                window.location.href = '/login';
-                return;
-            }
+            const token = requireAuthOrRedirect();
+            if (!token) return;
 
-            // Load categories first
             await this.loadCategories();
             await this.load();
 
-            // WebSocket for real-time updates
-            this.initWs(token);
+            this.ws = initWebSocket(API_BASE, token, (payload) => {
+                if (['create', 'update', 'delete'].includes(payload.action)) {
+                    this.load();
+                }
+            });
         },
 
         async loadCategories() {
@@ -51,6 +53,7 @@ export function analyticsPage() {
             try {
                 const res = await axios.get(`${API_BASE}/analytics?period=${this.period}`, this.getAuthConfig());
                 this.data = res.data;
+                this.updateTagBounds();
                 this.$nextTick(() => {
                     this.renderHeatmap();
                     this.renderCategoryChart();
@@ -60,6 +63,13 @@ export function analyticsPage() {
             } finally {
                 this.loading = false;
             }
+        },
+
+        updateTagBounds() {
+            const counts = this.data.tags.map(t => t.count);
+            this.tagBounds = counts.length
+                ? { min: Math.min(...counts), max: Math.max(...counts) }
+                : { min: 0, max: 0 };
         },
 
         async setPeriod(p) {
@@ -269,7 +279,7 @@ export function analyticsPage() {
                 const y = padding + i * (barHeight + barGap);
                 const barWidth = (cat.minutes / maxMinutes) * barMaxWidth;
 
-                // Метка
+                // mark
                 ctx.fillStyle = '#717c7c';
                 ctx.font = '16px monospace';
                 ctx.textBaseline = 'middle';
@@ -303,33 +313,21 @@ export function analyticsPage() {
         },
 
         // ─── Tag cloud (CSS-based) ─────────────────────────────
+        tagRatio(count) {
+            const { min, max } = this.tagBounds;
+            return max === min ? 1 : (count - min) / (max - min);
+        },
+
         getTagSize(count) {
-            const max = Math.max(...this.data.tags.map(t => t.count));
-            const min = Math.min(...this.data.tags.map(t => t.count));
-            if (max === min) return 1;
-            const ratio = (count - min) / (max - min);
             // 0.75rem — 1.5rem
-            return 0.75 + ratio * 0.75;
+            return 0.75 + this.tagRatio(count) * 0.75;
         },
 
         getTagOpacity(count) {
-            const max = Math.max(...this.data.tags.map(t => t.count));
-            const min = Math.min(...this.data.tags.map(t => t.count));
-            if (max === min) return 1;
-            const ratio = (count - min) / (max - min);
-            return 0.5 + ratio * 0.5;
+            return 0.5 + this.tagRatio(count) * 0.5;
         },
 
         // ─── Utilities ────────────────────────────────────────
-        formatMinutes(minutes) {
-            if (!minutes) return '0m';
-            const h = Math.floor(minutes / 60);
-            const m = minutes % 60;
-            if (h > 0 && m > 0) return `${h}h ${m}m`;
-            if (h > 0) return `${h}h`;
-            return `${m}m`;
-        },
-
         hasData() {
             return this.data.overview.total_done > 0;
         },
@@ -343,25 +341,6 @@ export function analyticsPage() {
             if (!categoryId) return 'Uncategorized';
             const cat = this.categories.find(c => c.id == categoryId);
             return cat ? cat.name : `Category ${categoryId}`;
-        },
-
-        // ─── WebSocket ────────────────────────────────────────
-        initWs(token) {
-            const url = new URL(API_BASE);
-            const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${wsProtocol}//${url.host}/api/v1/ws?token=${token}`;
-
-            this.ws = new WebSocket(wsUrl);
-            this.ws.onmessage = (event) => {
-                const payload = JSON.parse(event.data);
-                // Reload analytics on any activity change
-                if (['create', 'update', 'delete'].includes(payload.action)) {
-                    this.load();
-                }
-            };
-            this.ws.onclose = () => {
-                setTimeout(() => this.initWs(token), 3000);
-            };
         },
     };
 }

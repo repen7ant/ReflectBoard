@@ -35,7 +35,7 @@
         <div
             class="card-deadline"
             :class="deadlineStatus(activity.deadline)"
-            x-text="formatDate(activity.deadline, false)"
+            x-text="formatDate(activity.deadline, { showYear: false })"
         ></div>
     </template>
 

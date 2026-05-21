@@ -1,3 +1,5 @@
+import { parseDeadline } from '../shared/deadline.js';
+
 export function modalMethods() {
     return {
         openCreateModal(status) {
@@ -16,9 +18,7 @@ export function modalMethods() {
         },
 
         openEditModal(activity) {
-            const dl = activity.deadline ? activity.deadline.split('T') : ['', ''];
-            const timeRaw = dl[1] ? dl[1].slice(0, 5) : '';
-            const timeVal = (timeRaw === '00:00') ? '' : timeRaw;
+            const { date, time } = parseDeadline(activity.deadline);
 
             this.editModal = {
                 open: true,
@@ -26,8 +26,8 @@ export function modalMethods() {
                 title: activity.title,
                 description: activity.description || '',
                 category_id: activity.category_id || '',
-                deadlineDate: dl[0] || '',
-                deadlineTime: timeVal,
+                deadlineDate: date,
+                deadlineTime: time,
                 reflection_text: activity.reflection_text || '',
                 time_spent_minutes: activity.time_spent_minutes || '',
                 tags: activity.tags ? [...activity.tags] : [],

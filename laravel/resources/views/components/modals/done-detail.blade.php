@@ -16,13 +16,13 @@
 
             <div class="detail-row">
                 <span class="detail-label">Completed</span>
-                <span class="detail-value" x-text="formatDate(detailModal.activity?.completed_at, true)"></span>
+                <span class="detail-value" x-text="formatDate(detailModal.activity?.completed_at, { withTime: true })"></span>
             </div>
 
             <template x-if="detailModal.activity?.time_spent_minutes">
                 <div class="detail-row">
                     <span class="detail-label">Time Spent</span>
-                    <span class="detail-value" x-text="formatTime(detailModal.activity.time_spent_minutes)"></span>
+                    <span class="detail-value" x-text="formatMinutes(detailModal.activity.time_spent_minutes)"></span>
                 </div>
             </template>
 

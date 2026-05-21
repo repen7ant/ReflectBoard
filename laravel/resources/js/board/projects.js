@@ -1,9 +1,9 @@
+import { parseDeadline, buildDeadline } from '../shared/deadline.js';
+
 export function projectMethods(API_BASE) {
     return {
         async openProjectModal(project) {
-            const dl = project.deadline ? project.deadline.split('T') : ['', ''];
-            const timeRaw = dl[1] ? dl[1].slice(0, 5) : '';
-            const timeVal = (timeRaw === '00:00') ? '' : timeRaw;
+            const { date, time } = parseDeadline(project.deadline);
 
             this.projectModal = {
                 open: true,
@@ -14,8 +14,8 @@ export function projectMethods(API_BASE) {
                 title: project.title,
                 description: project.description || '',
                 category_id: project.category_id || '',
-                deadlineDate: dl[0] || '',
-                deadlineTime: timeVal,
+                deadlineDate: date,
+                deadlineTime: time,
                 tags: project.tags ? [...project.tags] : [],
             };
 
@@ -100,16 +100,12 @@ export function projectMethods(API_BASE) {
             const title = this.projectModal.title.trim();
             if (!title) return;
 
-            const deadline = this.projectModal.deadlineDate
-                ? `${this.projectModal.deadlineDate}T${this.projectModal.deadlineTime || '00:00'}:00`
-                : null;
-
             try {
                 await axios.patch(`${API_BASE}/activities/${this.projectModal.project.id}`, {
                     title,
                     description: this.projectModal.description || null,
                     category_id: this.projectModal.category_id || null,
-                    deadline,
+                    deadline: buildDeadline(this.projectModal.deadlineDate, this.projectModal.deadlineTime),
                     tags: this.projectModal.tags,
                 }, this.getAuthConfig());
                 this.projectModal.open = false;
