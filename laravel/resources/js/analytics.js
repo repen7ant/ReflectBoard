@@ -74,6 +74,8 @@ export function analyticsPage() {
             const bg = '#2d2c3c';              // --surface-2
             const border = '#43436c';          // --border
 
+            this.heatmapCells = [];
+
             // week marks
             const dayLabels = ['Mon', '', 'Wed', '', 'Fri', '', 'Sun'];
             ctx.fillStyle = '#717c7c';
@@ -108,6 +110,9 @@ export function analyticsPage() {
                 const count = heatmap[day] || 0;
                 const intensity = count / maxCount;
 
+                // Store for tooltip
+                this.heatmapCells.push({ x, y, width: cellSize, height: cellSize, day, count });
+
                 if (count === 0) {
                     ctx.fillStyle = bg;
                     ctx.strokeStyle = border;
@@ -124,6 +129,38 @@ export function analyticsPage() {
                     ctx.fill();
                 }
             });
+        },
+
+        heatmapMouseMove(e) {
+            const canvas = document.getElementById('heatmap-canvas');
+            if (!canvas || !this.heatmapCells) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const cell = this.heatmapCells.find(c =>
+                mouseX >= c.x && mouseX <= c.x + c.width &&
+                mouseY >= c.y && mouseY <= c.y + c.height
+            );
+
+            const tooltip = document.getElementById('heatmap-tooltip');
+            if (cell) {
+                const date = new Date(cell.day);
+                const formatted = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const tasks = cell.count === 1 ? '1 activity' : `${cell.count} activities`;
+                tooltip.textContent = `${formatted}: ${tasks}`;
+                tooltip.style.display = 'block';
+                tooltip.style.left = `${e.clientX + 10}px`;
+                tooltip.style.top = `${e.clientY + 10}px`;
+            } else {
+                tooltip.style.display = 'none';
+            }
+        },
+
+        heatmapMouseLeave() {
+            const tooltip = document.getElementById('heatmap-tooltip');
+            if (tooltip) tooltip.style.display = 'none';
         },
 
         getHeatmapDays() {

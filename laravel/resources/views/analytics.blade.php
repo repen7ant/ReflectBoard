@@ -86,7 +86,7 @@
                         <div class="analytics-block">
                             <div class="analytics-block-title">Activity</div>
                             <div class="heatmap-scroll">
-                                <canvas id="heatmap-canvas"></canvas>
+                                <canvas id="heatmap-canvas" @mousemove="heatmapMouseMove($event)" @mouseleave="heatmapMouseLeave()"></canvas>
                             </div>
                         </div>
 
@@ -165,6 +165,9 @@
         </template>
 
     </div>
+
+    <!-- Heatmap tooltip -->
+    <div id="heatmap-tooltip" class="heatmap-tooltip"></div>
 
     <script>
         window.API_BASE = '{{ config("services.api_base.url") }}';
