@@ -76,6 +76,7 @@ async def create_activity(
             user_id=current_user.id,
             time_spent_minutes=activity.time_spent_minutes,
             category_id=activity.category_id,
+            is_productive=activity.is_productive,
             completed_at=activity.completed_at,
         )
 
@@ -135,11 +136,12 @@ async def update_activity(
         )
         await redis_client.publish(f"board:{current_user.id}", parent_payload)
 
-    if activity.status == Status.done and activity.completed_at:
+    if update_dict.get("status") == Status.done and activity.completed_at:
         await record_completion(
             user_id=current_user.id,
             time_spent_minutes=activity.time_spent_minutes,
             category_id=activity.category_id,
+            is_productive=activity.is_productive,
             completed_at=activity.completed_at,
         )
 

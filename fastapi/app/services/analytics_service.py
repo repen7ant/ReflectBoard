@@ -56,6 +56,8 @@ class AnalyticsService:
         # ── Overview metrics ──────────────────────────────────
         total_done = len(activities)
         total_minutes = sum(a.time_spent_minutes or 0 for a in activities)
+        productive_minutes = sum(a.time_spent_minutes or 0 for a in activities if a.is_productive)
+        unproductive_minutes = sum(a.time_spent_minutes or 0 for a in activities if not a.is_productive)
         completion_rate = (
             round(total_done / total_created * 100) if total_created > 0 else 0
         )
@@ -115,6 +117,8 @@ class AnalyticsService:
             "overview": {
                 "total_done": total_done,
                 "total_minutes": total_minutes,
+                "productive_minutes": productive_minutes,
+                "unproductive_minutes": unproductive_minutes,
                 "streak": streak,
                 "completion_rate": completion_rate,
             },
