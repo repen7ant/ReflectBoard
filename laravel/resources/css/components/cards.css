@@ -1,0 +1,153 @@
+/* ─── Card ─── */
+.card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+    user-select: none;
+    position: relative;
+    padding-right: 2.5rem;
+}
+
+.complete-circle {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 50%;
+    border: 2px solid var(--accent-yellow);
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    padding: 0;
+    z-index: 2;
+}
+
+.complete-circle:hover {
+    background: var(--accent-yellow);
+}
+
+.card:hover {
+    border-color: var(--accent-yellow);
+    box-shadow: 0 0.25rem 1rem rgba(0,0,0,0.35);
+    transform: translateY(-0.125rem);
+}
+
+body.is-dragging .card:hover {
+    border-color: var(--border);
+    box-shadow: none;
+    transform: none;
+}
+
+body.no-hover .card:hover {
+    border-color: var(--border);
+    box-shadow: none;
+    transform: none;
+}
+
+.card-title {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.4;
+    margin-bottom: 0.5rem;
+}
+
+.card-category {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    color: var(--accent-yellow);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+}
+
+.category-dot--sm {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.card-deadline {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.375rem;
+}
+
+/* Card left border urgency */
+.card.soon    { border-left: 4px solid var(--accent-yellow); }
+.card.today   { border-left: 4px solid #dfa000; }
+.card.overdue { border-left: 4px solid var(--danger); }
+
+/* Deadline text urgency */
+.card-deadline.soon    { color: var(--accent-yellow); }
+.card-deadline.today   { color: #dfa000; }
+.card-deadline.overdue { color: var(--danger); font-weight: bold; }
+
+/* ─── Sortable ─── */
+.sortable-ghost {
+    opacity: 0.3;
+    background: var(--accent-dim);
+    border-color: var(--accent) !important;
+}
+.sortable-chosen { opacity: 0.9; }
+
+/* ─── Project card ─── */
+.card-project {
+    border-color: var(--accent);
+}
+
+.card-project:hover {
+    border-color: var(--accent-yellow);
+}
+
+body.is-dragging .card-project:hover {
+    border-color: var(--accent);
+}
+
+body.no-hover .card-project:hover {
+    border-color: var(--accent);
+}
+
+.card-parent-badge {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-bottom: 0.375rem;
+    font-style: italic;
+}
+
+.card-progress {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.card-progress-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.card-progress-bar {
+    height: 0.25rem;
+    background: var(--surface-2);
+    border-radius: 9999px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.card-progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 9999px;
+    transition: width 0.3s ease;
+}
+
+.card-progress-fill.done {
+    background: var(--accent-yellow);
+}

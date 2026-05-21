@@ -1,0 +1,192 @@
+/* ─── Form fields ─── */
+.field { margin-bottom: 1rem; }
+
+.field label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 0.375rem;
+}
+
+.field input:not(.tag-input), .field textarea, .field select {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    padding: 0.625rem 0.75rem;
+    color: var(--text);
+    font-family: 'JetBrainsMono Nerd Font', monospace;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.15s;
+    resize: none;
+}
+
+.field input:focus, .field textarea:focus, .field select:focus {
+    border-color: var(--accent);
+}
+
+.field select option { background: var(--surface-2); }
+
+.color-input {
+    height: 2.75rem;
+    width: 100%;
+    padding: 0.25rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+}
+
+/* ─── Tag input ─── */
+.tag-input-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    padding: 0.375rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: var(--surface-2);
+    min-height: 2.75rem;
+    align-items: center;
+    transition: border-color 0.15s;
+}
+
+.tag-input-wrapper:focus-within {
+    border-color: var(--accent);
+}
+
+.tag-pill {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--bg);
+    background: var(--accent);
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.tag-pill-remove {
+    opacity: 0.8;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    color: inherit;
+    padding: 0;
+    font-size: 1.1rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tag-pill-remove:hover {
+    opacity: 1;
+}
+
+.tag-input {
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 1rem;
+    font-family: 'JetBrainsMono Nerd Font', monospace;
+    flex: 1;
+    min-width: 100px;
+    padding: 0;
+    box-shadow: none;
+}
+
+.tag-input::placeholder {
+    color: var(--text-muted);
+}
+
+.tag-input:focus {
+    outline: none;
+    border: none;
+    box-shadow: none;
+}
+
+/* ─── Deadline input ─── */
+.deadline-inputs {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.deadline-date {
+    flex: 1;
+}
+
+.deadline-time {
+    width: 9rem;
+}
+
+/* ─── Category Grid ─── */
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.category-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface-2);
+    border: 2px solid var(--border);
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text);
+    transition: all 0.15s;
+    position: relative;
+    cursor: pointer;
+}
+
+.category-btn:hover {
+    border-color: var(--accent);
+}
+
+.category-btn.selected {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+}
+
+.category-dot {
+    width: 0.875rem;
+    height: 0.875rem;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.category-btn .delete-x {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1.25rem;
+    height: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 1.25rem;
+    line-height: 1;
+    opacity: 0.6;
+    transition: all 0.15s;
+}
+
+.category-btn .delete-x:hover {
+    color: var(--danger);
+    opacity: 1;
+    transform: translateY(-50%) scale(1.2);
+}
+
+@media (max-width: 32.5rem) {
+    .category-grid {
+        grid-template-columns: 1fr;
+    }
+}

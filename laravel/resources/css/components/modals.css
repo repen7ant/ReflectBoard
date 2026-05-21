@@ -1,0 +1,108 @@
+/* ─── Modal overlay ─── */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(0.25rem);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 28rem;
+    box-shadow: 0 1.25rem 3.75rem rgba(0,0,0,0.6);
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.modal-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    transition: color 0.15s, background 0.15s;
+}
+.modal-close:hover {
+    color: var(--text);
+    background: var(--surface-2);
+}
+
+.modal-narrow {
+    max-width: 26rem;
+}
+
+.modal-wide {
+    max-width: 36rem;
+}
+
+.modal-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+.modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.modal-header-center {
+    display: flex;
+    justify-content: center;
+}
+
+.modal-header-content {
+    text-align: center;
+}
+
+.modal-activity-title {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.4;
+    margin-top: 0.25rem;
+}
+
+.modal-activity-title-spaced {
+    margin-bottom: 1.25rem;
+}
+
+/* ─── Modal actions ─── */
+.modal-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+    justify-content: flex-end;
+}
+
+.modal-actions-spaced {
+    justify-content: space-between;
+    margin-top: 1.5rem;
+}
+
+.modal-actions-group {
+    display: flex;
+    gap: 0.5rem;
+}
