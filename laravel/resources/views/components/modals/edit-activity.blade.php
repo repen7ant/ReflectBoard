@@ -1,6 +1,7 @@
 <template x-if="editModal.open">
     <div class="modal-overlay" @click.self="editModal.open = false">
         <div class="modal">
+            <button class="modal-close" @click="editModal.open = false">&times;</button>
             <div class="modal-header modal-header-center">
                 <div class="modal-header-content">
                     <div class="detail-label">Created</div>
@@ -88,7 +89,6 @@
             <div class="modal-actions modal-actions-spaced">
                 <button class="btn btn-danger" @click="deleteActivity(editModal.activity)">Delete</button>
                 <div class="modal-actions-group">
-                    <button class="btn btn-ghost" @click="editModal.open = false">Cancel</button>
                     <button class="btn btn-primary" @click="updateActivity()">Save Changes</button>
                 </div>
             </div>

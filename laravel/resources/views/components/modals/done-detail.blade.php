@@ -1,6 +1,7 @@
 <template x-if="detailModal.open">
     <div class="modal-overlay" @click.self="detailModal.open = false">
         <div class="modal">
+            <button class="modal-close" @click="detailModal.open = false">&times;</button>
             <div class="modal-header">
                 <div style="flex: 1;">
                     <div class="modal-activity-title" x-text="detailModal.activity?.title"></div>
@@ -67,9 +68,8 @@
                 </div>
             </template>
 
-            <div class="modal-actions modal-actions-spaced">
+            <div class="modal-actions">
                 <button class="btn btn-danger" @click="deleteActivity(detailModal.activity)">Delete</button>
-                <button class="btn btn-ghost" @click="detailModal.open = false">Close</button>
             </div>
         </div>
     </div>

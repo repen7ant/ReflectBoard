@@ -1,6 +1,7 @@
 <template x-if="categoryModal.open">
     <div class="modal-overlay" @click.self="categoryModal.open = false">
         <div class="modal modal-narrow">
+            <button class="modal-close" @click="categoryModal.open = false">&times;</button>
             <div class="modal-title">New Category</div>
 
             <div class="field">
@@ -14,7 +15,6 @@
             </div>
 
             <div class="modal-actions">
-                <button class="btn btn-ghost" @click="categoryModal.open = false">Cancel</button>
                 <button class="btn btn-primary" @click="createCategory()" :disabled="!categoryModal.name.trim()">Create Category</button>
             </div>
         </div>

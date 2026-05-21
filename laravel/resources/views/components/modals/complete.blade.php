@@ -1,16 +1,17 @@
 <template x-if="completeModal.open">
     <div class="modal-overlay" @click.self="completeModal.open = false">
         <div class="modal">
+            <button class="modal-close" @click="completeModal.open = false">&times;</button>
             <div class="modal-title">Complete Task</div>
             <div class="modal-activity-title modal-activity-title-spaced" x-text="completeModal.activity?.title"></div>
 
             <div class="field">
-                <label>Time spent in mins (optional)</label>
+                <label>Time spent (minutes)</label>
                 <input type="number" x-model="completeModal.time_spent" placeholder="e.g. 45" min="0">
             </div>
 
             <div class="field">
-                <label>Reflection (optional)</label>
+                <label>Reflection</label>
                 <textarea
                     x-model="completeModal.reflection"
                     rows="4"
@@ -18,8 +19,7 @@
                 ></textarea>
             </div>
 
-            <div class="modal-actions modal-actions-spaced">
-                <button class="btn btn-ghost" @click="completeModal.open = false">Cancel</button>
+            <div class="modal-actions">
                 <button
                     class="btn btn-primary btn-success"
                     @click="completeActivity()"

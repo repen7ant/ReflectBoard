@@ -1,6 +1,7 @@
 <template x-if="projectModal.open">
     <div class="modal-overlay" @click.self="projectModal.open = false">
         <div class="modal modal-wide">
+            <button class="modal-close" @click="projectModal.open = false">&times;</button>
 
             <div class="modal-header modal-header-center">
                 <div class="modal-header-content">
@@ -178,7 +179,6 @@
                     Delete project
                 </button>
                 <div class="modal-actions-group">
-                    <button class="btn btn-ghost" @click="projectModal.open = false">Cancel</button>
                     <button class="btn btn-primary" @click="updateProject()">Save Changes</button>
                 </div>
             </div>

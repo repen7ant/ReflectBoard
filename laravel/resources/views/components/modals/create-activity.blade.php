@@ -1,6 +1,7 @@
 <template x-if="modal.open">
     <div class="modal-overlay" @click.self="modal.open = false">
         <div class="modal">
+            <button class="modal-close" @click="modal.open = false">&times;</button>
             <div class="modal-title">New Task — <span x-text="columnLabel(modal.status)"></span></div>
 
             <div class="field">
@@ -88,7 +89,6 @@
             </div>
 
             <div class="modal-actions">
-                <button class="btn btn-ghost" @click="modal.open = false">Cancel</button>
                 <button class="btn btn-primary" @click="createActivity()" :disabled="!modal.title.trim()">Create</button>
             </div>
         </div>

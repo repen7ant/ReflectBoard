@@ -13,6 +13,7 @@
     <template x-if="open">
         <div class="modal-overlay" @click.self="close()">
             <div class="modal">
+                <button class="modal-close" @click="close()">&times;</button>
                 <div class="modal-title">Quick Capture</div>
 
                 <div class="field">
@@ -90,8 +91,7 @@
                     <textarea x-model="form.reflection_text" rows="3" placeholder="What do you think about it?"></textarea>
                 </div>
 
-                <div class="modal-actions modal-actions-spaced">
-                    <button class="btn btn-ghost" @click="close()">Cancel</button>
+                <div class="modal-actions">
                     <button
                         class="btn btn-primary"
                         @click="submit()"
