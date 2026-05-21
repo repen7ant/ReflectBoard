@@ -10,6 +10,7 @@ export function modalMethods() {
                 deadlineDate: '',
                 deadlineTime: '',
                 is_project: false,
+                is_productive: true,
                 tags: [],
             };
         },
@@ -30,6 +31,7 @@ export function modalMethods() {
                 reflection_text: activity.reflection_text || '',
                 time_spent_minutes: activity.time_spent_minutes || '',
                 tags: activity.tags ? [...activity.tags] : [],
+                is_productive: activity.is_productive !== false,
             };
         },
 

@@ -60,12 +60,20 @@
                 </div>
             </div>
 
-            <div class="field">
+            <div class="field" style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
                 <label style="display:flex; align-items:center; gap:0.5rem;">
                     Project
                     <input
                         type="checkbox"
                         x-model="modal.is_project"
+                        style="width:1.1rem; height:1.1rem; accent-color:var(--accent); cursor:pointer;"
+                    >
+                </label>
+                <label style="display:flex; align-items:center; gap:0.5rem;">
+                    Productive
+                    <input
+                        type="checkbox"
+                        x-model="modal.is_productive"
                         style="width:1.1rem; height:1.1rem; accent-color:var(--accent); cursor:pointer;"
                     >
                 </label>
