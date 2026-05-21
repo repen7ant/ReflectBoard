@@ -63,7 +63,7 @@ class ActivityService:
                     Activity.is_on_board.is_(True),
                 )
             )
-            .order_by(Activity.position.asc())
+            .order_by(Activity.position.asc(), Activity.id.desc())
         )
 
         if status:
@@ -134,7 +134,7 @@ class ActivityService:
             select(Activity)
             .options(selectinload(Activity.category))
             .where(Activity.parent_id == project_id, Activity.user_id == user_id)
-            .order_by(Activity.position.asc())
+            .order_by(Activity.position.asc(), Activity.id.desc())
         )
         return list(result.scalars().all())
 
