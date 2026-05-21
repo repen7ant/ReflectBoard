@@ -205,9 +205,13 @@ export function board() {
                     draggable: '.card',
                     fallbackTolerance: 5,
 
-                    onStart: () => document.body.classList.add('is-dragging'),
+                    onStart: (evt) => {
+                        document.body.classList.add('is-dragging');
+                        window.Alpine?.deferMutations();
+                    },
 
                     onEnd: async (evt) => {
+                        window.Alpine?.flushAndStopDeferringMutations();
                         document.body.classList.remove('is-dragging');
                         document.body.classList.add('no-hover');
                         setTimeout(() => document.body.classList.remove('no-hover'), 100);

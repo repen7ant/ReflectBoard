@@ -75,6 +75,17 @@
                 </div>
 
                 <div class="field">
+                    <label style="display:flex; align-items:center; gap:0.5rem;">
+                        Productive
+                        <input
+                            type="checkbox"
+                            x-model="form.is_productive"
+                            style="width:1.1rem; height:1.1rem; accent-color:var(--accent); cursor:pointer;"
+                        >
+                    </label>
+                </div>
+
+                <div class="field">
                     <label>Reflection</label>
                     <textarea x-model="form.reflection_text" rows="3" placeholder="What do you think about it?"></textarea>
                 </div>
@@ -111,6 +122,7 @@ function fab() {
             category_id: null,
             tags: [],
             reflection_text: '',
+            is_productive: true,
         },
 
         getAuthConfig() {
@@ -140,6 +152,7 @@ function fab() {
                 category_id: null,
                 tags: [],
                 reflection_text: '',
+                is_productive: true,
             };
         },
 
@@ -155,6 +168,7 @@ function fab() {
                     category_id: this.form.category_id || null,
                     tags: this.form.tags,
                     reflection_text: this.form.reflection_text || null,
+                    is_productive: this.form.is_productive,
                     is_quick_capture: true,
                     status: 'done',
                 }, this.getAuthConfig());

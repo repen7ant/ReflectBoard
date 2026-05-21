@@ -1,4 +1,5 @@
 <div
+    x-data="{ activity }"
     class="card"
     :class="{ 'card-project': activity.is_project }"
     :data-id="activity.id"

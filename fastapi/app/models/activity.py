@@ -59,6 +59,7 @@ class Activity(Base):
     is_project: Mapped[bool] = mapped_column(Boolean, default=False)
     is_on_board: Mapped[bool] = mapped_column(Boolean, default=False)
     is_quick_capture: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_productive: Mapped[bool] = mapped_column(Boolean, default=True)
 
     deadline: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     tags: Mapped[list | None] = mapped_column(JSON, nullable=True, default=list)

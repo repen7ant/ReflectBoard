@@ -74,6 +74,17 @@
                 </div>
             </div>
 
+            <div class="field">
+                <label style="display:flex; align-items:center; gap:0.5rem;">
+                    Productive
+                    <input
+                        type="checkbox"
+                        x-model="editModal.is_productive"
+                        style="width:1.1rem; height:1.1rem; accent-color:var(--accent); cursor:pointer;"
+                    >
+                </label>
+            </div>
+
             <div class="modal-actions modal-actions-spaced">
                 <button class="btn btn-danger" @click="deleteActivity(editModal.activity)">Delete</button>
                 <div class="modal-actions-group">

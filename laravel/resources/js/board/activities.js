@@ -16,6 +16,7 @@ export function activityMethods(API_BASE) {
                     status: this.modal.status,
                     deadline,
                     is_project: this.modal.is_project,
+                    is_productive: this.modal.is_productive,
                     tags: this.modal.tags,
                 }, this.getAuthConfig());
                 this.modal.open = false;
@@ -43,6 +44,7 @@ export function activityMethods(API_BASE) {
                     reflection_text: this.editModal.reflection_text || null,
                     time_spent_minutes: parseInt(this.editModal.time_spent_minutes) || null,
                     tags: this.editModal.tags,
+                    is_productive: this.editModal.is_productive,
                 }, this.getAuthConfig());
                 this.editModal.open = false;
                 await this.loadActivities(false);

@@ -13,7 +13,7 @@ class Activity extends Model
     protected $fillable = [
         'user_id', 'parent_id', 'category_id', 'title', 'description',
         'reflection_text', 'time_spent_minutes', 'status',
-        'is_project', 'is_on_board', 'is_quick_capture',
+        'is_project', 'is_on_board', 'is_quick_capture', 'is_productive',
         'deadline', 'tags', 'completed_at', 'position',
         'category_snapshot_name', 'category_snapshot_color',
     ];
@@ -23,6 +23,7 @@ class Activity extends Model
         'is_project' => 'boolean',
         'is_on_board' => 'boolean',
         'is_quick_capture' => 'boolean',
+        'is_productive' => 'boolean',
         'deadline' => 'datetime',
         'completed_at' => 'datetime',
         'position' => 'integer',
