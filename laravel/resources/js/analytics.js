@@ -27,6 +27,11 @@ export function analyticsPage() {
                 return;
             }
             await this.load();
+
+            // Listen for new activities from FAB
+            window.addEventListener('fab:captured', () => {
+                this.load();
+            });
         },
 
         // ─── Data ─────────────────────────────────────────────
