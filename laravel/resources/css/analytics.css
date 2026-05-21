@@ -1,0 +1,248 @@
+/* ─── Analytics wrapper ─── */
+.analytics-wrapper {
+    padding: 1.5rem;
+    max-width: 64rem;
+    margin: 0 auto;
+}
+
+/* ─── Period switcher ─── */
+.analytics-periods {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.period-btn {
+    padding: 0.375rem 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: 'JetBrainsMono Nerd Font', monospace;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.period-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.period-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-dim);
+}
+
+/* ─── Overview cards ─── */
+.overview-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 48rem) {
+    .overview-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 28rem) {
+    .overview-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.overview-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.overview-value {
+    font-size: 1.75rem;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1;
+}
+
+.overview-unit {
+    font-size: 1rem;
+    color: var(--text-muted);
+}
+
+.overview-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+}
+
+/* ─── Analytics blocks ─── */
+.analytics-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.analytics-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+}
+
+.analytics-block-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.analytics-block-empty {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    padding: 1rem 0;
+    text-align: center;
+}
+
+/* ─── Two column layout ─── */
+.analytics-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+@media (max-width: 48rem) {
+    .analytics-two-col {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ─── Heatmap ─── */
+.heatmap-scroll {
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+}
+
+.heatmap-scroll canvas {
+    display: block;
+}
+
+/* ─── Tag cloud ─── */
+.tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: baseline;
+    padding: 0.5rem 0;
+}
+
+.tag-cloud-item {
+    color: var(--accent);
+    cursor: default;
+    transition: opacity 0.15s;
+    font-family: 'JetBrainsMono Nerd Font', monospace;
+}
+
+.tag-cloud-item:hover {
+    opacity: 1 !important;
+}
+
+/* ─── Live block ─── */
+.live-dot {
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--danger);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+.live-total {
+    display: flex;
+    align-items: baseline;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+}
+
+.live-categories {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+}
+
+.live-category-row {
+    display: grid;
+    grid-template-columns: 8rem 1fr 4rem;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.live-category-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.live-bar-wrap {
+    height: 0.5rem;
+    background: var(--surface-2);
+    border-radius: 9999px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.live-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 9999px;
+    transition: width 0.3s ease;
+    min-width: 2px;
+}
+
+.live-category-value {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-align: right;
+}
+
+/* ─── Empty state ─── */
+.analytics-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 6rem 0;
+    color: var(--text-muted);
+}
+
+.analytics-empty-icon {
+    font-size: 3rem;
+    opacity: 0.3;
+}
+
+.analytics-empty-text {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
