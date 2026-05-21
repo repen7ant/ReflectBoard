@@ -32,10 +32,8 @@ export function analyticsPage() {
             await this.loadCategories();
             await this.load();
 
-            // Listen for new activities from FAB
-            window.addEventListener('fab:captured', () => {
-                this.load();
-            });
+            // WebSocket for real-time updates
+            this.initWs(token);
         },
 
         async loadCategories() {
@@ -302,6 +300,25 @@ export function analyticsPage() {
             if (!categoryId) return 'Uncategorized';
             const cat = this.categories.find(c => c.id == categoryId);
             return cat ? cat.name : `Category ${categoryId}`;
+        },
+
+        // ─── WebSocket ────────────────────────────────────────
+        initWs(token) {
+            const url = new URL(API_BASE);
+            const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${wsProtocol}//${url.host}/api/v1/ws?token=${token}`;
+
+            this.ws = new WebSocket(wsUrl);
+            this.ws.onmessage = (event) => {
+                const payload = JSON.parse(event.data);
+                // Reload analytics on any activity change
+                if (['create', 'update', 'delete'].includes(payload.action)) {
+                    this.load();
+                }
+            };
+            this.ws.onclose = () => {
+                setTimeout(() => this.initWs(token), 3000);
+            };
         },
     };
 }
