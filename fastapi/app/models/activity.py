@@ -28,7 +28,6 @@ class Status(str, enum.Enum):
     backlog = "backlog"
     today = "today"
     in_process = "in_process"
-    on_reflection = "on_reflection"
     done = "done"
 
 

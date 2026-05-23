@@ -55,7 +55,7 @@
                     </div>
 
                     <!-- Add button -->
-                    <template x-if="col.status !== 'on_reflection' && !loading">
+                    <template x-if="!loading">
                         <div class="column-footer">
                             <button class="add-btn" @click.stop="openCreateModal(col.status)">+</button>
                         </div>

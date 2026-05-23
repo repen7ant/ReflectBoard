@@ -15,16 +15,14 @@ export function board() {
         // ─── State ───────────────────────────────────────────
         loading: true,
         columns: [
-            { status: 'backlog',       label: 'Backlog' },
-            { status: 'today',         label: 'Today' },
-            { status: 'in_process',    label: 'In Process' },
-            { status: 'on_reflection', label: 'On Reflection' },
+            { status: 'backlog',    label: 'Backlog' },
+            { status: 'today',      label: 'Today' },
+            { status: 'in_process', label: 'In Process' },
         ],
         activities: {
             backlog: [],
             today: [],
             in_process: [],
-            on_reflection: [],
         },
         categories: [],
         modal: {
@@ -202,10 +200,9 @@ export function board() {
             try {
                 const res = await axios.get(`${API_BASE}/activities`, this.getAuthConfig());
                 this.activities = {
-                    backlog:       res.data.filter(a => a.status === 'backlog'),
-                    today:         res.data.filter(a => a.status === 'today'),
-                    in_process:    res.data.filter(a => a.status === 'in_process'),
-                    on_reflection: res.data.filter(a => a.status === 'on_reflection'),
+                    backlog:    res.data.filter(a => a.status === 'backlog'),
+                    today:      res.data.filter(a => a.status === 'today'),
+                    in_process: res.data.filter(a => a.status === 'in_process'),
                 };
             } catch (e) {
                 this.showToast('Error loading activities');

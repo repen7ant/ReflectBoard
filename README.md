@@ -69,7 +69,7 @@ http://localhost
 
 **Доска (`/board`)**
 
-- Создать задачу в любой колонке (Backlog / Today / In Process / On Reflection)
+- Создать задачу в любой колонке (Backlog / Today / In Process)
 - Перетащить карточку между колонками — порядок и статус сохраняются
 - Отметить дедлайн — карточка подсветится: жёлтый (≤3 дня) → янтарный (сегодня) → красный (просрочено)
 - Открыть проект → добавить подзадачи → вывести подзадачу на доску одной кнопкой
@@ -107,7 +107,7 @@ activities
   └─ category_id → categories (nullable)
   └─ category_snapshot_name / category_snapshot_color  (сохраняется при удалении категории)
   └─ title, description, reflection_text
-  └─ status: backlog | today | in_process | on_reflection | done
+  └─ status: backlog | today | in_process | done
   └─ is_project, is_on_board, is_quick_capture  (флаги)
   └─ deadline, completed_at, time_spent_minutes
   └─ tags (JSON), position

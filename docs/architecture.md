@@ -37,7 +37,7 @@
 | `description`             | TEXT nullable         | Описание                                          |
 | `reflection_text`         | TEXT nullable         | Рефлексия                                         |
 | `time_spent_minutes`      | INT nullable          | Затраченное время                                 |
-| `status`                  | ENUM NOT NULL         | `backlog\|today\|in_process\|on_reflection\|done` |
+| `status`                  | ENUM NOT NULL         | `backlog\|today\|in_process\|done`                |
 | `is_project`              | TINYINT(1) DEFAULT 0  | Карточка является проектом                        |
 | `is_on_board`             | TINYINT(1) DEFAULT 0  | Подзадача выведена на доску                       |
 | `is_quick_capture`        | TINYINT(1) DEFAULT 0  | Быстрая запись (FAB)                              |
