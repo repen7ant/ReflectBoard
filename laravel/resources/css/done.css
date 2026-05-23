@@ -1,8 +1,6 @@
 /* ─── Done page layout ─── */
 .done-wrapper {
     padding: 1.5rem;
-    max-width: 75rem;
-    margin: 0 auto;
 }
 
 /* ─── Filters panel ─── */
@@ -169,8 +167,14 @@
 /* ─── Activities list ─── */
 .activities-list {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 0.75rem;
+}
+
+@media (max-width: 72rem) {
+    .activities-list {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 @media (max-width: 48rem) {
