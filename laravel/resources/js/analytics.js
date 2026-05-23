@@ -1,5 +1,5 @@
 import { getAuthConfig, requireAuthOrRedirect, initWebSocket } from './shared/api.js';
-import { formatMinutes } from './shared/format.js';
+import { formatMinutes, tzOffsetMinutes } from './shared/format.js';
 
 export function analyticsPage() {
     const API_BASE = window.API_BASE;
@@ -51,7 +51,10 @@ export function analyticsPage() {
         async load() {
             this.loading = true;
             try {
-                const res = await axios.get(`${API_BASE}/analytics?period=${this.period}`, this.getAuthConfig());
+                const res = await axios.get(`${API_BASE}/analytics`, {
+                    ...this.getAuthConfig(),
+                    params: { period: this.period, tz_offset: tzOffsetMinutes() },
+                });
                 this.data = res.data;
                 this.updateTagBounds();
                 this.$nextTick(() => {
