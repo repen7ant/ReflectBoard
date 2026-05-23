@@ -6,7 +6,7 @@ from app.db.session import get_db
 from app.dependencies.auth import get_current_user
 from app.models.activity import Status
 from app.models.user import User
-from app.schemas.activity import ActivityCreate, ActivityOut, ActivityUpdate
+from app.schemas.activity import ActivityCreate, ActivityOut, ActivityUpdate, LogTimeRequest
 from app.services.activity_service import ActivityService
 from app.services.redis_service import record_completion
 from fastapi.encoders import jsonable_encoder
@@ -138,13 +138,48 @@ async def update_activity(
         await redis_client.publish(f"board:{current_user.id}", parent_payload)
 
     if update_dict.get("status") == Status.done and activity.completed_at:
-        await record_completion(
-            user_id=current_user.id,
-            time_spent_minutes=activity.time_spent_minutes,
-            category_id=activity.category_id,
-            is_productive=activity.is_productive,
-            completed_at=activity.completed_at,
-        )
+        delta = (activity.time_spent_minutes or 0) - (activity.time_logged_minutes or 0)
+        if delta > 0:
+            await record_completion(
+                user_id=current_user.id,
+                time_spent_minutes=delta,
+                category_id=activity.category_id,
+                is_productive=activity.is_productive,
+                completed_at=activity.completed_at,
+            )
+
+    return activity
+
+
+@router.post("/activities/{activity_id}/log-time", response_model=ActivityOut)
+async def log_time(
+    activity_id: int,
+    data: LogTimeRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    activity = await ActivityService.get_activity_by_id(db, activity_id, current_user.id)
+    if not activity:
+        raise HTTPException(status_code=404, detail="Activity not found")
+    if activity.status == Status.done:
+        raise HTTPException(status_code=400, detail="Cannot log time on a completed activity")
+
+    activity.time_spent_minutes = (activity.time_spent_minutes or 0) + data.minutes
+    activity.time_logged_minutes = (activity.time_logged_minutes or 0) + data.minutes
+    await db.commit()
+    await db.refresh(activity)
+
+    # completed_at omitted: task is in-progress, bucket to today
+    await record_completion(
+        user_id=current_user.id,
+        time_spent_minutes=data.minutes,
+        category_id=activity.category_id,
+        is_productive=activity.is_productive,
+    )
+
+    activity_out = ActivityOut.model_validate(activity)
+    payload = json.dumps({"action": "update", "data": jsonable_encoder(activity_out)})
+    await redis_client.publish(f"board:{current_user.id}", payload)
 
     return activity
 

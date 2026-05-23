@@ -74,6 +74,8 @@
 
     @include('components.modals.complete')
 
+    @include('components.modals.log-time')
+
     @include('components.modals.create-category')
 
     <!-- Context menu -->

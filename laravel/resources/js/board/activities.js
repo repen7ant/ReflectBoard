@@ -63,6 +63,23 @@ export function activityMethods(API_BASE) {
             }
         },
 
+        async logTime() {
+            const minutes = parseInt(this.logTimeModal.minutes);
+            if (!minutes || minutes < 1) return;
+            try {
+                await axios.post(
+                    `${API_BASE}/activities/${this.logTimeModal.activity.id}/log-time`,
+                    { minutes },
+                    this.getAuthConfig(),
+                );
+                this.logTimeModal.open = false;
+                await this.loadActivities(false);
+                this.showToast(`+${minutes} min logged`);
+            } catch (e) {
+                this.showToast('Error logging time');
+            }
+        },
+
         async deleteActivity(activity) {
             if (!confirm(`Delete "${activity.title}"?`)) return;
             try {

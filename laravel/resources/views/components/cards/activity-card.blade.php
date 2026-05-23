@@ -10,6 +10,13 @@
         title="Complete"
         @click.stop="openCompleteModal(activity)"
     ></button>
+    <template x-if="!activity.is_project">
+        <button
+            class="log-time-btn"
+            title="Log time"
+            @click.stop="openLogTimeModal(activity)"
+        >+</button>
+    </template>
 
     <!-- Parent project name for subtasks -->
     <template x-if="activity.parent_id && activity.parent_title">
@@ -53,5 +60,9 @@
                 ></div>
             </div>
         </div>
+    </template>
+
+    <template x-if="activity.time_spent_minutes">
+        <div class="card-time-badge" x-text="formatMinutes(activity.time_spent_minutes)"></div>
     </template>
 </div>

@@ -2,7 +2,7 @@ import { modalMethods } from './board/modals.js';
 import { activityMethods } from './board/activities.js';
 import { projectMethods } from './board/projects.js';
 import { getAuthConfig, requireAuthOrRedirect, initWebSocket } from './shared/api.js';
-import { formatDate } from './shared/format.js';
+import { formatDate, formatMinutes } from './shared/format.js';
 import { deadlineStatus } from './shared/deadline.js';
 
 const TOAST_MS = 2500;
@@ -69,6 +69,11 @@ export function board() {
             reflection: '',
             time_spent: '',
         },
+        logTimeModal: {
+            open: false,
+            activity: null,
+            minutes: '',
+        },
         categoryModal: {
             open: false,
             name: '',
@@ -86,6 +91,7 @@ export function board() {
         // ─── Shared helpers ───────────────────────────────────
         getAuthConfig,
         formatDate,
+        formatMinutes,
         deadlineStatus,
 
         // ─── Init ─────────────────────────────────────────────

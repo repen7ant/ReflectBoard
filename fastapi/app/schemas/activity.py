@@ -18,6 +18,7 @@ class ActivityOut(BaseModel):
     description: str | None
     reflection_text: str | None
     time_spent_minutes: int | None
+    time_logged_minutes: int = 0
     status: Status
     is_project: bool
     is_on_board: bool
@@ -70,3 +71,7 @@ class ActivityCreate(BaseModel):
     is_productive: bool = True
     deadline: datetime | None = None
     tags: list[str] = Field(default_factory=list)
+
+
+class LogTimeRequest(BaseModel):
+    minutes: int = Field(gt=0)

@@ -56,6 +56,14 @@ export function modalMethods() {
             };
         },
 
+        openLogTimeModal(activity) {
+            this.logTimeModal = {
+                open: true,
+                activity,
+                minutes: '',
+            };
+        },
+
         selectCategory(categoryId) {
             if (this.modal.open) {
                 this.modal.category_id = this.modal.category_id === categoryId ? '' : categoryId;

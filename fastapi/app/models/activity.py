@@ -51,6 +51,7 @@ class Activity(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     reflection_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     time_spent_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    time_logged_minutes: Mapped[int] = mapped_column(Integer, default=0)
 
     status: Mapped[Status] = mapped_column(
         Enum(Status), default=Status.backlog, nullable=False
