@@ -36,9 +36,15 @@ export function modalMethods() {
         },
 
         openCompleteModal(activity) {
-            if (activity.is_project && activity.subtasks_total > 0 && activity.subtasks_done < activity.subtasks_total) {
-                this.showToast(`Finish subtasks first (${activity.subtasks_done}/${activity.subtasks_total} done)`);
-                return;
+            if (activity.is_project) {
+                if (activity.subtasks_total === 0) {
+                    this.showToast('Add subtasks before completing a project');
+                    return;
+                }
+                if (activity.subtasks_done < activity.subtasks_total) {
+                    this.showToast(`Finish subtasks first (${activity.subtasks_done}/${activity.subtasks_total} done)`);
+                    return;
+                }
             }
             this.completeModal = {
                 open: true,

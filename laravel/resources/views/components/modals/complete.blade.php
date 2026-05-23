@@ -5,10 +5,12 @@
             <div class="modal-title">Complete Task</div>
             <div class="modal-activity-title modal-activity-title-spaced" x-text="completeModal.activity?.title"></div>
 
-            <div class="field">
-                <label>Time spent (minutes)</label>
-                <input type="number" x-model="completeModal.time_spent" placeholder="e.g. 45" min="0">
-            </div>
+            <template x-if="!completeModal.activity?.is_project">
+                <div class="field">
+                    <label>Time spent (minutes)</label>
+                    <input type="number" x-model="completeModal.time_spent" placeholder="e.g. 45" min="0">
+                </div>
+            </template>
 
             <div class="field">
                 <label>Reflection</label>
