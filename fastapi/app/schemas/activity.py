@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from app.models.activity import Status
 
@@ -34,6 +34,14 @@ class ActivityOut(BaseModel):
 
     category: CategoryOut | None
     model_config = ConfigDict(from_attributes=True)
+
+    @field_serializer("completed_at", "created_at", "updated_at", when_used="json")
+    def _utc_marker(self, dt: datetime | None) -> str | None:
+        if dt is None:
+            return None
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.isoformat()
 
 
 class ActivityUpdate(BaseModel):
