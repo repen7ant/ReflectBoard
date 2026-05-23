@@ -28,3 +28,10 @@ export function formatMinutes(minutes) {
     if (h > 0)          return `${h}h`;
     return `${m}m`;
 }
+
+// ─── Timezone ─────────────────────────────────────────
+// Minutes east of UTC for the current browser (e.g. UTC+2 → 120).
+// getTimezoneOffset() returns (UTC - local) in minutes, so negate it.
+export function tzOffsetMinutes() {
+    return -new Date().getTimezoneOffset();
+}
