@@ -36,7 +36,9 @@
 | `title`                   | VARCHAR(255) NOT NULL | Заголовок                                         |
 | `description`             | TEXT nullable         | Описание                                          |
 | `reflection_text`         | TEXT nullable         | Рефлексия                                         |
-| `time_spent_minutes`      | INT nullable          | Затраченное время                                 |
+| `time_spent_minutes`      | INT nullable          | Суммарное затраченное время (минуты)              |
+| `time_logged_minutes`     | INT DEFAULT 0         | Время уже записанное в Redis через лог-кнопку     |
+| `is_productive`           | TINYINT(1) DEFAULT 1  | Продуктивная активность (0 = непродуктивная)      |
 | `status`                  | ENUM NOT NULL         | `backlog\|today\|in_process\|done`                |
 | `is_project`              | TINYINT(1) DEFAULT 0  | Карточка является проектом                        |
 | `is_on_board`             | TINYINT(1) DEFAULT 0  | Подзадача выведена на доску                       |
@@ -59,8 +61,17 @@
 
 ## Механизм синхронизации (Dual-Write)
 
-При завершении задачи или создании быстрой записи FastAPI выполняет:
+FastAPI пишет в MySQL и Redis одновременно в двух сценариях:
 
-1. **Персистентность** — запись в MySQL
-2. **Агрегация** — инкремент счётчиков в Redis по ключам `stats:user:{id}:daily:{date}:category:{category_id}`
-3. **Уведомление доски** — публикация события в Redis-канал `board:{user_id}` → WebSocket push
+**При логировании времени (`POST /activities/{id}/log-time`):**
+1. `time_spent_minutes += minutes`, `time_logged_minutes += minutes` → MySQL
+2. Инкремент Redis-счётчика на `minutes` → live-аналитика обновляется сразу
+3. WebSocket push → все вкладки видят обновлённый бейдж
+
+**При завершении задачи или создании быстрой записи:**
+1. Запись результата → MySQL
+2. Инкремент Redis на дельту `time_spent - time_logged` (не дублируя уже залогированное)
+3. WebSocket push → задача уходит с доски
+
+Ключи Redis: `stats:user:{id}:daily:{date}:category:{category_id}` — счётчики минут.
+Канал: `board:{user_id}` — WebSocket события.
