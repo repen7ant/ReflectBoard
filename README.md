@@ -1,5 +1,7 @@
 # ReflectBoard
 
+![CI](https://github.com/repen7ant/ReflectBoard/actions/workflows/ci.yml/badge.svg)
+
 Трекер задач с рефлексией. Kanban-доска для ведения дел, журнал выполненного с фильтрацией, аналитика продуктивности по времени и категориям — всё обновляется в реальном времени через WebSocket.
 
 ---

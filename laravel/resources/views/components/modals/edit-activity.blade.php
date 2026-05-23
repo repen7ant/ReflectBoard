@@ -11,12 +11,24 @@
 
             <div class="field">
                 <label>Title</label>
-                <input type="text" x-model="editModal.title">
+                <textarea
+                    x-model="editModal.title"
+                    rows="1"
+                    style="overflow:hidden;"
+                    x-init="$el.style.height = $el.scrollHeight + 'px'"
+                    @input="$el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px'"
+                ></textarea>
             </div>
 
             <div class="field">
                 <label>Description</label>
-                <textarea x-model="editModal.description" rows="2"></textarea>
+                <textarea
+                    x-model="editModal.description"
+                    rows="2"
+                    style="overflow:hidden;"
+                    x-init="$el.style.height = $el.scrollHeight + 'px'"
+                    @input="$el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px'"
+                ></textarea>
             </div>
 
             <div class="field">

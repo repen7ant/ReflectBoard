@@ -6,12 +6,27 @@
 
             <div class="field">
                 <label>Title *</label>
-                <input type="text" x-model="modal.title" placeholder="What needs to be done?" @keydown.enter="createActivity()">
+                <textarea
+                    x-model="modal.title"
+                    rows="1"
+                    placeholder="What needs to be done?"
+                    style="overflow:hidden;"
+                    x-init="$el.style.height = $el.scrollHeight + 'px'"
+                    @input="$el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px'"
+                    @keydown.enter.prevent="createActivity()"
+                ></textarea>
             </div>
 
             <div class="field">
                 <label>Description</label>
-                <textarea x-model="modal.description" rows="2" placeholder="Details"></textarea>
+                <textarea
+                    x-model="modal.description"
+                    rows="2"
+                    placeholder="Details"
+                    style="overflow:hidden;"
+                    x-init="$el.style.height = $el.scrollHeight + 'px'"
+                    @input="$el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px'"
+                ></textarea>
             </div>
 
             <div class="field">
