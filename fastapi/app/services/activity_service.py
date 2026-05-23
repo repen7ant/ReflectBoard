@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, time, timedelta
 
 from sqlalchemy import String, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -292,6 +292,7 @@ class ActivityService:
         date_from: date | None = None,
         date_to: date | None = None,
         category_id: int | None = None,
+        tz_offset: int = 0,
     ):
         query = (
             select(Activity)
@@ -315,14 +316,15 @@ class ActivityService:
                     )
                 )
 
+        shift = timedelta(minutes=tz_offset)
+
         if date_from:
-            query = query.where(Activity.completed_at >= date_from)
+            df_utc = datetime.combine(date_from, time.min) - shift
+            query = query.where(Activity.completed_at >= df_utc)
 
         if date_to:
-            from datetime import datetime
-
-            date_to_end = datetime.combine(date_to, datetime.max.time())
-            query = query.where(Activity.completed_at <= date_to_end)
+            dt_utc = datetime.combine(date_to, time.max) - shift
+            query = query.where(Activity.completed_at <= dt_utc)
 
         if category_id:
             query = query.where(Activity.category_id == category_id)

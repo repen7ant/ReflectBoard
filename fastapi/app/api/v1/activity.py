@@ -36,10 +36,11 @@ async def get_done_activities(
     date_from: date | None = Query(None),
     date_to: date | None = Query(None),
     category_id: int | None = Query(None),
+    tz_offset: int = Query(0, ge=-720, le=840),
     current_user: User = Depends(get_current_user),
 ):
     return await ActivityService.get_done_activities(
-        db, current_user.id, search, date_from, date_to, category_id
+        db, current_user.id, search, date_from, date_to, category_id, tz_offset
     )
 
 
