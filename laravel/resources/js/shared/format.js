@@ -9,12 +9,12 @@ export function formatDate(dt, { withTime = false, showYear = true } = {}) {
 
     if (withTime && !isDateOnly) {
         const datePart = d.toLocaleDateString('en-US', dateOpts);
-        const timePart = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        const timePart = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
         return `${datePart} at ${timePart}`;
     }
 
     if (isDateOnly) return d.toLocaleDateString('en-US', dateOpts);
-    return d.toLocaleString('en-US', { ...dateOpts, hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleString('en-US', { ...dateOpts, hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
 // ─── Duration ─────────────────────────────────────────

@@ -15,6 +15,11 @@
             </div>
 
             <div class="detail-row">
+                <span class="detail-label">Created</span>
+                <span class="detail-value" x-text="formatDate(detailModal.activity?.created_at, { withTime: true })"></span>
+            </div>
+
+            <div class="detail-row">
                 <span class="detail-label">Completed</span>
                 <span class="detail-value" x-text="formatDate(detailModal.activity?.completed_at, { withTime: true })"></span>
             </div>
