@@ -14,10 +14,12 @@
                 </div>
             </div>
 
-            <div class="detail-row">
-                <span class="detail-label">Created</span>
-                <span class="detail-value" x-text="formatDate(detailModal.activity?.created_at, { withTime: true })"></span>
-            </div>
+            <template x-if="!detailModal.activity?.is_quick_capture">
+                <div class="detail-row">
+                    <span class="detail-label">Created</span>
+                    <span class="detail-value" x-text="formatDate(detailModal.activity?.created_at, { withTime: true })"></span>
+                </div>
+            </template>
 
             <div class="detail-row">
                 <span class="detail-label">Completed</span>

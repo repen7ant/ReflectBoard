@@ -62,6 +62,6 @@ function emptyForm() {
         category_id: null,
         tags: [],
         reflection_text: '',
-        is_productive: true,
+        is_productive: false,
     };
 }
