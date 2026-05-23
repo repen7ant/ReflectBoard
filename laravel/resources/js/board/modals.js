@@ -36,6 +36,10 @@ export function modalMethods() {
         },
 
         openCompleteModal(activity) {
+            if (activity.is_project && activity.subtasks_total > 0 && activity.subtasks_done < activity.subtasks_total) {
+                this.showToast(`Finish subtasks first (${activity.subtasks_done}/${activity.subtasks_total} done)`);
+                return;
+            }
             this.completeModal = {
                 open: true,
                 activity,
