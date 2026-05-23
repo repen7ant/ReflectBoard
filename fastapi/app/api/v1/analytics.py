@@ -15,7 +15,7 @@ async def get_analytics(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
     period: str = Query(default="30d", pattern="^(7d|30d|90d|all)$"),
-    tz_offset: int = Query(default=0),
+    tz_offset: int = Query(default=0, ge=-720, le=840),
 ):
     historical = await AnalyticsService.get_analytics(
         db, current_user.id, period, tz_offset

@@ -139,14 +139,16 @@ class AnalyticsService:
         db: AsyncSession, user_id: int, tz_offset: int = 0
     ) -> int:
         """Current streak — consecutive local days with >= 1 completed task."""
+        shift = timedelta(minutes=tz_offset)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=370)
         result = await db.execute(
             select(Activity.completed_at).where(
                 Activity.user_id == user_id,
                 Activity.status == Status.done,
                 Activity.completed_at.isnot(None),
+                Activity.completed_at >= cutoff,
             )
         )
-        shift = timedelta(minutes=tz_offset)
         local_days = sorted(
             {(c + shift).date() for (c,) in result.all()}, reverse=True
         )
