@@ -400,6 +400,42 @@ class TestGetDoneActivities:
         assert data[1]["title"] == "Second"
         assert data[2]["title"] == "First"
 
+    async def test_done_filter_respects_tz_offset_include(
+        self, client: AsyncClient, db: AsyncSession, test_user: User
+    ):
+        # 23:00 UTC May 23 == 01:00 May 24 at offset +120 → should appear in May 24 filter
+        db.add(Activity(
+            user_id=test_user.id,
+            title="late",
+            status="done",
+            completed_at=datetime(2026, 5, 23, 23, 0, 0),
+        ))
+        await db.commit()
+
+        res = await client.get(
+            "/api/v1/activities/done?date_from=2026-05-24&date_to=2026-05-24&tz_offset=120"
+        )
+        assert res.status_code == 200
+        assert any(x["title"] == "late" for x in res.json())
+
+    async def test_done_filter_respects_tz_offset_exclude(
+        self, client: AsyncClient, db: AsyncSession, test_user: User
+    ):
+        # Same activity should NOT appear in the May 23 local-day filter at offset +120
+        db.add(Activity(
+            user_id=test_user.id,
+            title="late",
+            status="done",
+            completed_at=datetime(2026, 5, 23, 23, 0, 0),
+        ))
+        await db.commit()
+
+        res = await client.get(
+            "/api/v1/activities/done?date_from=2026-05-23&date_to=2026-05-23&tz_offset=120"
+        )
+        assert res.status_code == 200
+        assert not any(x["title"] == "late" for x in res.json())
+
 
 class TestCategorySnapshot:
     async def test_snapshot_fields_in_response(

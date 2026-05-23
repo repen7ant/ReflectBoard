@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, time, timedelta, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,15 +8,14 @@ from sqlalchemy.orm import selectinload
 from app.models.activity import Activity, Status
 
 
-def _date_from_period(period: str) -> date | None:
-    today = datetime.now(timezone.utc).date()
-    if period == "7d":
-        return today - timedelta(days=7)
-    if period == "30d":
-        return today - timedelta(days=30)
-    if period == "90d":
-        return today - timedelta(days=90)
-    return None  # "all"
+def _date_from_period(period: str, tz_offset: int) -> datetime | None:
+    days = {"7d": 7, "30d": 30, "90d": 90}.get(period)
+    if days is None:
+        return None  # "all"
+    shift = timedelta(minutes=tz_offset)
+    local_today = (datetime.now(timezone.utc) + shift).date()
+    local_midnight = datetime.combine(local_today - timedelta(days=days), time.min)
+    return local_midnight - shift  # back to UTC for the completed_at filter
 
 
 class AnalyticsService:
@@ -25,8 +24,10 @@ class AnalyticsService:
         db: AsyncSession,
         user_id: int,
         period: str,  # "7d" | "30d" | "90d" | "all"
+        tz_offset: int = 0,
     ) -> dict:
-        date_from = _date_from_period(period)
+        shift = timedelta(minutes=tz_offset)
+        date_from = _date_from_period(period, tz_offset)
 
         # ── Base query for completed tasks ─────────────────────
         query = (
@@ -63,14 +64,14 @@ class AnalyticsService:
         completion_rate = (
             round(total_done / total_created * 100) if total_created > 0 else 0
         )
-        streak = await AnalyticsService._calculate_streak(db, user_id)
+        streak = await AnalyticsService._calculate_streak(db, user_id, tz_offset)
 
         # ── Heatmap ───────────────────────────────────────────
         heatmap: dict[str, int] = defaultdict(int)
         for a in activities:
             if a.completed_at is None:
                 continue
-            day = a.completed_at.date().isoformat()
+            day = (a.completed_at + shift).date().isoformat()
             heatmap[day] += 1
 
         # ── Categories ────────────────────────────────────────
@@ -134,36 +135,35 @@ class AnalyticsService:
         }
 
     @staticmethod
-    async def _calculate_streak(db: AsyncSession, user_id: int) -> int:
-        """Calculates the current streak — consecutive days with at least one completed task."""
+    async def _calculate_streak(
+        db: AsyncSession, user_id: int, tz_offset: int = 0
+    ) -> int:
+        """Current streak — consecutive local days with >= 1 completed task."""
+        shift = timedelta(minutes=tz_offset)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=370)
         result = await db.execute(
-            select(func.date(Activity.completed_at).label("day"))
-            .where(
+            select(Activity.completed_at).where(
                 Activity.user_id == user_id,
                 Activity.status == Status.done,
                 Activity.completed_at.isnot(None),
+                Activity.completed_at >= cutoff,
             )
-            .distinct()
-            .order_by(func.date(Activity.completed_at).desc())
         )
-        days = [row.day for row in result.all()]
-
-        if not days:
+        local_days = sorted(
+            {(c + shift).date() for (c,) in result.all()}, reverse=True
+        )
+        if not local_days:
             return 0
 
-        today = datetime.now(timezone.utc).date()
+        today = (datetime.now(timezone.utc) + shift).date()
         streak = 0
         expected = today
 
-        for day in days:
-            # day can be a string or date depending on the driver
-            if isinstance(day, str):
-                day = date.fromisoformat(day)
+        for day in local_days:
             if day == expected:
                 streak += 1
                 expected -= timedelta(days=1)
             elif day == today - timedelta(days=1) and streak == 0:
-                # Start from yesterday if nothing has been done today yet
                 streak += 1
                 expected = day - timedelta(days=1)
             else:

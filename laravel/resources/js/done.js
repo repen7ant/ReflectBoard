@@ -1,5 +1,5 @@
 import { getAuthConfig, requireAuthOrRedirect, initWebSocket } from './shared/api.js';
-import { formatDate, formatMinutes } from './shared/format.js';
+import { formatDate, formatMinutes, tzOffsetMinutes } from './shared/format.js';
 
 export function donePage() {
     const API_BASE = window.API_BASE;
@@ -74,7 +74,7 @@ export function donePage() {
             this.loading = true;
             this.activePreset = '';
             try {
-                const params = {};
+                const params = { tz_offset: tzOffsetMinutes() };
                 if (this.filters.search)      params.search      = this.filters.search;
                 if (this.filters.category_id) params.category_id = this.filters.category_id;
                 if (this.filters.date_from)   params.date_from   = this.filters.date_from;
@@ -97,7 +97,8 @@ export function donePage() {
         setDatePreset(preset) {
             this.activePreset = preset;
             const today = new Date();
-            const fmt = (d) => d.toISOString().split('T')[0];
+            const fmt = (d) =>
+                `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
             if (preset === 'today') {
                 this.filters.date_from = fmt(today);
