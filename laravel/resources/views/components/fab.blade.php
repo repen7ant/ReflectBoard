@@ -29,7 +29,14 @@
 
                 <div class="field">
                     <label>Description</label>
-                    <textarea x-model="form.description" rows="2" placeholder="Any details..."></textarea>
+                    <textarea
+                        x-model="form.description"
+                        rows="2"
+                        placeholder="Any details..."
+                        style="overflow:hidden;"
+                        x-init="$el.style.height = $el.scrollHeight + 'px'"
+                        @input="$el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px'"
+                    ></textarea>
                 </div>
 
                 <div class="field">
@@ -88,7 +95,14 @@
 
                 <div class="field">
                     <label>Reflection</label>
-                    <textarea x-model="form.reflection_text" rows="3" :placeholder="form.is_productive ? 'What are your thoughts on this task? Any challenges?' : 'Worth it? Needed, or mindless?'"></textarea>
+                    <textarea
+                        x-model="form.reflection_text"
+                        rows="3"
+                        :placeholder="form.is_productive ? 'What are your thoughts on this task? Any challenges?' : 'Worth it? Needed, or mindless?'"
+                        style="overflow:hidden;"
+                        x-init="$el.style.height = $el.scrollHeight + 'px'"
+                        @input="$el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px'"
+                    ></textarea>
                 </div>
 
                 <div class="modal-actions">

@@ -16,8 +16,11 @@
                 <label>Reflection</label>
                 <textarea
                     x-model="completeModal.reflection"
-                    rows="4"
+                    rows="3"
                     placeholder="What are your thoughts on this task? Any challenges?"
+                    style="overflow:hidden;"
+                    x-init="$el.style.height = $el.scrollHeight + 'px'"
+                    @input="$el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px'"
                 ></textarea>
             </div>
 
