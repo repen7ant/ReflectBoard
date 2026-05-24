@@ -230,15 +230,20 @@ class ActivityService:
                 if not activity.deadline and parent.deadline:
                     activity.deadline = parent.deadline
 
+        old_status = activity.status
+
         for key, value in update_data.items():
             if hasattr(activity, key) and key != "user_id":
                 setattr(activity, key, value)
 
-        if update_data.get("status") == Status.done:
+        if activity.status == Status.done and old_status != Status.done:
             activity.completed_at = func.now()
             if activity.category:
                 activity.category_snapshot_name = activity.category.name
                 activity.category_snapshot_color = activity.category.color
+        elif old_status == Status.done and activity.status != Status.done:
+            activity.completed_at = None
+            activity.time_logged_minutes = activity.time_spent_minutes or 0
 
         await db.commit()
         await db.refresh(activity)

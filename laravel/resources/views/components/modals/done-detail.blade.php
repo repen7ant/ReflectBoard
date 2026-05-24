@@ -75,7 +75,8 @@
                 </div>
             </template>
 
-            <div class="modal-actions">
+            <div class="modal-actions modal-actions-spaced">
+                <button class="btn btn-ghost" @click="returnToBoard(detailModal.activity)">↩ Return to Board</button>
                 <button class="btn btn-danger" @click="deleteActivity(detailModal.activity)">Delete</button>
             </div>
         </div>

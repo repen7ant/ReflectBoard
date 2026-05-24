@@ -187,6 +187,7 @@
             @click.outside="closeContextMenu()"
             @keydown.escape.window="closeContextMenu()"
         >
+            <button class="context-menu-item" @click="contextMenuReturnToBoard()">↩ Return to Board</button>
             <button class="context-menu-item context-menu-item--danger" @click="contextMenuDelete()">Delete</button>
         </div>
     </template>

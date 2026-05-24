@@ -480,3 +480,158 @@ class TestCategorySnapshot:
         data = res.json()
         assert data["category_snapshot_name"] == test_category.name
         assert data["category_snapshot_color"] == test_category.color
+
+
+class TestReturnToBoard:
+    async def test_return_to_board_changes_status_to_in_process(
+        self, client: AsyncClient, db: AsyncSession, test_user: User
+    ):
+        activity = Activity(
+            user_id=test_user.id,
+            title="Done task",
+            status="done",
+            completed_at=datetime.now(),
+            time_spent_minutes=60,
+            time_logged_minutes=20,
+        )
+        db.add(activity)
+        await db.commit()
+
+        res = await client.patch(
+            f"/api/v1/activities/{activity.id}",
+            json={"status": "in_process"},
+        )
+        assert res.status_code == 200
+        data = res.json()
+        assert data["status"] == "in_process"
+
+    async def test_return_to_board_clears_completed_at(
+        self, client: AsyncClient, db: AsyncSession, test_user: User
+    ):
+        activity = Activity(
+            user_id=test_user.id,
+            title="Done task",
+            status="done",
+            completed_at=datetime.now(),
+            time_spent_minutes=60,
+            time_logged_minutes=20,
+        )
+        db.add(activity)
+        await db.commit()
+
+        res = await client.patch(
+            f"/api/v1/activities/{activity.id}",
+            json={"status": "in_process"},
+        )
+        assert res.status_code == 200
+        assert res.json()["completed_at"] is None
+
+    async def test_return_to_board_preserves_reflection_and_time_spent(
+        self, client: AsyncClient, db: AsyncSession, test_user: User
+    ):
+        activity = Activity(
+            user_id=test_user.id,
+            title="Done task",
+            status="done",
+            completed_at=datetime.now(),
+            reflection_text="Great progress",
+            time_spent_minutes=90,
+        )
+        db.add(activity)
+        await db.commit()
+
+        res = await client.patch(
+            f"/api/v1/activities/{activity.id}",
+            json={"status": "in_process"},
+        )
+        assert res.status_code == 200
+        data = res.json()
+        assert data["reflection_text"] == "Great progress"
+        assert data["time_spent_minutes"] == 90
+
+    async def test_return_to_board_syncs_time_logged_to_time_spent(
+        self, client: AsyncClient, db: AsyncSession, test_user: User
+    ):
+        """time_logged_minutes must equal time_spent_minutes after restore
+        so that re-completing with the same value produces delta=0."""
+        activity = Activity(
+            user_id=test_user.id,
+            title="Done task",
+            status="done",
+            completed_at=datetime.now(),
+            time_spent_minutes=60,
+            time_logged_minutes=20,
+        )
+        db.add(activity)
+        await db.commit()
+
+        res = await client.patch(
+            f"/api/v1/activities/{activity.id}",
+            json={"status": "in_process"},
+        )
+        assert res.status_code == 200
+        assert res.json()["time_logged_minutes"] == 60
+
+    async def test_return_to_board_syncs_time_logged_when_time_spent_is_null(
+        self, client: AsyncClient, db: AsyncSession, test_user: User
+    ):
+        activity = Activity(
+            user_id=test_user.id,
+            title="Done task",
+            status="done",
+            completed_at=datetime.now(),
+            time_spent_minutes=None,
+            time_logged_minutes=0,
+        )
+        db.add(activity)
+        await db.commit()
+
+        res = await client.patch(
+            f"/api/v1/activities/{activity.id}",
+            json={"status": "in_process"},
+        )
+        assert res.status_code == 200
+        assert res.json()["time_logged_minutes"] == 0
+
+    async def test_round_trip_restore_then_recomplete_records_only_new_time(
+        self, client: AsyncClient, db: AsyncSession, test_user: User
+    ):
+        """Full round-trip: done → restore → re-complete.
+        After restoring, time_logged_minutes is synced to time_spent_minutes.
+        Re-completing with the same time should record delta=0.
+        Re-completing with MORE time should record only the increment."""
+        from unittest.mock import AsyncMock, patch
+
+        activity = Activity(
+            user_id=test_user.id,
+            title="Done task",
+            status="done",
+            completed_at=datetime.now(),
+            time_spent_minutes=60,
+            time_logged_minutes=20,
+        )
+        db.add(activity)
+        await db.commit()
+
+        # Restore to board
+        res = await client.patch(
+            f"/api/v1/activities/{activity.id}",
+            json={"status": "in_process"},
+        )
+        assert res.status_code == 200
+        assert res.json()["time_logged_minutes"] == 60  # synced
+
+        # Re-complete with MORE time (80 min total — 20 more than before)
+        with patch(
+            "app.api.v1.activity.record_completion", new_callable=AsyncMock
+        ) as mock_record:
+            res2 = await client.patch(
+                f"/api/v1/activities/{activity.id}",
+                json={"status": "done", "time_spent_minutes": 80},
+            )
+            assert res2.status_code == 200
+            assert res2.json()["status"] == "done"
+            # delta = 80 - 60 = 20, so record_completion called with 20 minutes
+            mock_record.assert_called_once()
+            call_kwargs = mock_record.call_args.kwargs
+            assert call_kwargs["time_spent_minutes"] == 20

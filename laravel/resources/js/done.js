@@ -189,7 +189,7 @@ export function donePage() {
         },
 
         openContextMenu(e, activity) {
-            const menuW = 180, menuH = 80;
+            const menuW = 180, menuH = 120;
             const x = e.clientX + menuW > window.innerWidth  ? e.clientX - menuW : e.clientX;
             const y = e.clientY + menuH > window.innerHeight ? e.clientY - menuH : e.clientY;
             this.contextMenu = { open: true, x, y, activity };
@@ -203,6 +203,28 @@ export function donePage() {
             const a = this.contextMenu.activity;
             this.closeContextMenu();
             this.deleteActivity(a);
+        },
+
+        contextMenuReturnToBoard() {
+            const a = this.contextMenu.activity;
+            this.closeContextMenu();
+            this.returnToBoard(a);
+        },
+
+        async returnToBoard(activity) {
+            try {
+                await axios.patch(
+                    `${API_BASE}/activities/${activity.id}`,
+                    { status: 'in_process' },
+                    this.getAuthConfig(),
+                );
+                this.activities    = this.activities.filter(a => a.id !== activity.id);
+                this.allActivities = this.allActivities.filter(a => a.id !== activity.id);
+                this.detailModal.open  = false;
+                this.contextMenu.open  = false;
+            } catch (e) {
+                alert('Failed to return activity to board');
+            }
         },
 
         async deleteActivity(activity) {
