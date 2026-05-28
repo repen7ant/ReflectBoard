@@ -103,20 +103,8 @@ async function generateTgToken() {
             'Accept': 'application/json',
         },
     });
-    const { token } = await res.json();
-    const command = `/link ${token}`;
-    try {
-        await navigator.clipboard.writeText(command);
-        alert(`Copied to clipboard!\n\nSend this to the bot:\n${command}\n\nExpires in 5 minutes.`);
-    } catch {
-        const ta = document.createElement('textarea');
-        ta.value = command;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        alert(`Copied to clipboard!\n\nSend this to the bot:\n${command}\n\nExpires in 5 minutes.`);
-    }
+    const { url } = await res.json();
+    window.open(url, '_blank');
 }
 </script>
 </body>

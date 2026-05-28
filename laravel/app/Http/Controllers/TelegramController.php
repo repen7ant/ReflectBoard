@@ -14,6 +14,10 @@ class TelegramController extends Controller
         $token = Str::random(32);
         Redis::connection('bot')->setex("tg_link:{$token}", 300, $request->user()->id);
 
-        return response()->json(['token' => $token]);
+        $botUsername = env('TELEGRAM_BOT_USERNAME');
+
+        return response()->json([
+            'url' => "https://t.me/{$botUsername}?start={$token}",
+        ]);
     }
 }
