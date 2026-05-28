@@ -19,3 +19,9 @@ class UserRepository:
             update(User).where(User.id == user_id).values(telegram_id=telegram_id)
         )
         await self.session.commit()
+
+    async def clear_telegram_id(self, telegram_id: int) -> None:
+        await self.session.execute(
+            update(User).where(User.telegram_id == telegram_id).values(telegram_id=None)
+        )
+        await self.session.commit()
