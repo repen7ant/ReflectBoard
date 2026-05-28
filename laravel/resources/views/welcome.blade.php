@@ -6,6 +6,7 @@
     <title>ReflectBoard</title>
 
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
@@ -36,6 +37,7 @@
                     <div class="hero-actions">
                         @auth
                             <a href="{{ route('board') }}" class="btn btn-primary hero-btn">Open your board</a>
+                            <button onclick="generateTgToken()" class="btn btn-ghost hero-btn">Connect Telegram</button>
                         @else
                             <a href="{{ route('register') }}" class="btn btn-primary hero-btn">Sign up</a>
                             <a href="{{ route('github.login') }}" class="btn btn-ghost hero-btn">
@@ -92,5 +94,30 @@
             </div>
         </section>
     </div>
+<script>
+async function generateTgToken() {
+    const res = await fetch('/telegram/link', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json',
+        },
+    });
+    const { token } = await res.json();
+    const command = `/link ${token}`;
+    try {
+        await navigator.clipboard.writeText(command);
+        alert(`Copied to clipboard!\n\nSend this to the bot:\n${command}\n\nExpires in 5 minutes.`);
+    } catch {
+        const ta = document.createElement('textarea');
+        ta.value = command;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        alert(`Copied to clipboard!\n\nSend this to the bot:\n${command}\n\nExpires in 5 minutes.`);
+    }
+}
+</script>
 </body>
 </html>

@@ -24,6 +24,10 @@ class DatabaseConfig(BaseModel):
     url: str
 
 
+class RedisConfig(BaseModel):
+    url: str
+
+
 class LogConfig(BaseModel):
     project_name: str
     show_datetime: bool
@@ -52,10 +56,10 @@ class TomlConfigSettingsSource(PydanticBaseSettingsSource):
 
 
 class Settings(BaseSettings):
-    # Перечисляем, какие ключи ожидаются в конфиге
     bot: BotConfig
     logs: LogConfig
     db: DatabaseConfig
+    redis: RedisConfig
 
     """
     Задаём параметры чтения конфига:

@@ -2,7 +2,10 @@
 token = "1234567890:AaBbCcDdEeFfGrOoShAHhIiJjKkLlMmNnOo"
 
 [db]
-url = "mysql+aiomysql://reflectboard:reflectboard@db:3306/reflectboard"
+url = "mysql+aiomysql://reflectboard:reflectboard@localhost:3306/reflectboard"
+
+[redis]
+url = "redis://localhost:6379"
 
 [logs]
 project_name = "reflectboard_bot"
