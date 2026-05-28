@@ -1,0 +1,7 @@
+from aiogram import Router
+
+from bot.handlers import start
+
+
+def get_routers() -> list[Router]:
+    return [start.router]
