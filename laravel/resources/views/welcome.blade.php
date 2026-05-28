@@ -18,6 +18,9 @@
             </div>
             <div class="landing-actions">
                 @auth
+                    <a href="https://t.me/{{ env('TELEGRAM_BOT_USERNAME') }}" target="_blank" title="Open Telegram bot" style="display:flex;align-items:center;padding:0.625rem 0.25rem;color:var(--text-muted);opacity:0.7;transition:opacity 0.15s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">
+                        <svg viewBox="0 0 24 24" width="30" height="30" fill="none"><circle cx="12" cy="12" r="12" fill="#2AABEE"/><path fill="white" d="M5.89 11.72l11.57-4.46c.54-.2 1.01.13.96.66l-1.97 9.28c-.14.66-.54.82-1.08.51l-3-2.21-1.45 1.39c-.16.16-.3.3-.6.3l.21-3.05 5.56-5.02c.24-.21-.05-.33-.37-.12L7.19 13.9l-2.96-.92c-.64-.2-.66-.64.13-.95z"/></svg>
+                    </a>
                     <a href="{{ route('board') }}" class="btn btn-primary btn-link">Board</a>
                     <form method="POST" action="{{ route('logout') }}" class="landing-logout-form">
                         @csrf
@@ -37,7 +40,11 @@
                     <div class="hero-actions">
                         @auth
                             <a href="{{ route('board') }}" class="btn btn-primary hero-btn">Open your board</a>
-                            <button onclick="generateTgToken()" class="btn btn-ghost hero-btn">Connect Telegram</button>
+                            @if(auth()->user()->telegram_id)
+                                <a href="https://t.me/{{ env('TELEGRAM_BOT_USERNAME') }}" target="_blank" class="btn btn-ghost hero-btn">Open Telegram bot</a>
+                            @else
+                                <button onclick="generateTgToken()" class="btn btn-ghost hero-btn">Connect Telegram</button>
+                            @endif
                         @else
                             <a href="{{ route('register') }}" class="btn btn-primary hero-btn">Sign up</a>
                             <a href="{{ route('github.login') }}" class="btn btn-ghost hero-btn">
