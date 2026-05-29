@@ -317,6 +317,7 @@ class ActivityService:
                 query = query.where(
                     or_(
                         Activity.title.ilike(search_pattern),
+                        Activity.description.ilike(search_pattern),
                         Activity.reflection_text.ilike(search_pattern),
                     )
                 )
