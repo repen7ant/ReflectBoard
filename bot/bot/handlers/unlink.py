@@ -17,4 +17,4 @@ async def handle_unlink(message: Message, session: AsyncSession, db_user: User |
 
     repo = UserRepository(session)
     await repo.clear_telegram_id(message.from_user.id)
-    await message.answer("Your Telegram account has been unlinked from ReflectBoard.")
+    await message.answer("✅ Your Telegram account has been unlinked from ReflectBoard.")

@@ -1,3 +1,4 @@
+import html
 from datetime import datetime, timedelta, timezone
 
 import structlog
@@ -72,7 +73,8 @@ async def check_deadlines(
             try:
                 await bot.send_message(
                     user.telegram_id,
-                    f'⏰ Deadline reminder: "{activity["title"]}"\nDue: {formatted}',
+                    f'⏰ <b>Deadline reminder</b>\n"{html.escape(activity["title"])}"\nDue: {formatted}',
+                    parse_mode="HTML",
                 )
                 await redis.setex(dedup_key, (lead_hours + 1) * 3600, "1")
             except Exception:

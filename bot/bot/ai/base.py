@@ -28,6 +28,6 @@ def format_stats_for_prompt(data: dict) -> str:
 
 
 ANALYSIS_PROMPT = """\
-You are a productivity coach. Analyze the user's activity stats below and give brief, actionable insight in 3-5 sentences. Focus on patterns, what's going well, and one specific improvement suggestion.
+You are a productivity coach. Analyze the user's activity stats below and give brief, actionable insight in 3-5 sentences. Use HTML formatting: <b>text</b> for section headers. Focus on patterns, what's going well, and one specific improvement suggestion.
 
 {stats_text}"""

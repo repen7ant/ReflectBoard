@@ -95,4 +95,4 @@ async def handle_analyze(
         return
 
     await redis.setex(rate_key, 3600, "1")
-    await message.answer(analysis, parse_mode="Markdown")
+    await message.answer(analysis, parse_mode="HTML")

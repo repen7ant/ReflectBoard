@@ -31,7 +31,7 @@ async def handle_start(
     user_id = await redis.get(f"tg_link:{token}")
 
     if not user_id:
-        await message.answer("Token is invalid or expired. Generate a new one on the website.")
+        await message.answer("Token is invalid or expired. Please generate a new one on the website.")
         return
 
     await redis.delete(f"tg_link:{token}")
@@ -39,4 +39,4 @@ async def handle_start(
     repo = UserRepository(session)
     await repo.set_telegram_id(user_id.decode(), message.from_user.id)
 
-    await message.answer("Your Telegram account has been linked to ReflectBoard!")
+    await message.answer("✅ Your Telegram account has been linked to ReflectBoard!")

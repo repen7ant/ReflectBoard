@@ -55,19 +55,20 @@ async def handle_settings(
         tz_sign = "+" if tz >= 0 else "-"
         tz_str = f"{tz_sign}{tz_h}:{tz_m:02d}"
         await message.answer(
-            f"Current settings:\n"
-            f"deadline: {lead}h before\n"
-            f"reminder: {reminder or 'off'}\n"
-            f"today: {today or 'off'}\n"
-            f"timezone: UTC{tz_str}\n"
+            f"<b>Current settings:</b>\n"
+            f"• deadline: <b>{lead}h</b> before\n"
+            f"• reminder: <b>{reminder or 'off'}</b>\n"
+            f"• today: <b>{today or 'off'}</b>\n"
+            f"• timezone: <b>UTC{tz_str}</b>\n"
             f"\n"
-            f"Commands:\n"
-            f"/settings deadline 24\n"
-            f"/settings reminder 09:00\n"
-            f"/settings reminder off\n"
-            f"/settings today 08:00\n"
-            f"/settings today off\n"
-            f"/settings timezone +3"
+            f"<b>Commands:</b>\n"
+            f"<code>/settings deadline 24</code>\n"
+            f"<code>/settings reminder 09:00</code>\n"
+            f"<code>/settings reminder off</code>\n"
+            f"<code>/settings today 08:00</code>\n"
+            f"<code>/settings today off</code>\n"
+            f"<code>/settings timezone +3</code>",
+            parse_mode="HTML",
         )
         return
 
@@ -79,65 +80,67 @@ async def handle_settings(
         if not value or not value.isdigit():
             await message.answer(
                 "Set how many hours before a deadline to notify you.\n"
-                "Example: /settings deadline 24"
+                "Example: <code>/settings deadline 24</code>",
+                parse_mode="HTML",
             )
             return
         await repo.upsert(db_user.id, deadline_lead_hours=int(value))
-        await message.answer(f"Deadline lead time set to {value}h.")
+        await message.answer(f"✅ Deadline lead time set to <b>{value}h</b>.", parse_mode="HTML")
 
     elif key == "reminder":
         if not value:
             await message.answer(
-                "Set a daily reminder to log your time.\n"
-                "Example: /settings reminder 09:00\n"
-                "To disable: /settings reminder off"
+                "Set a daily reminder to log your activities.\n"
+                "Example: <code>/settings reminder 09:00</code>\n"
+                "To disable: <code>/settings reminder off</code>",
+                parse_mode="HTML",
             )
             return
         if value.lower() == "off":
             await repo.upsert(db_user.id, reminder_time=None)
-            await message.answer("Daily reminder disabled.")
+            await message.answer("✅ Daily reminder disabled.")
         elif _validate_time(value):
             await repo.upsert(db_user.id, reminder_time=value)
-            await message.answer(f"Daily reminder set to {value}.")
+            await message.answer(f"✅ Daily reminder set to <b>{value}</b>.", parse_mode="HTML")
         else:
-            await message.answer("Invalid time. Use HH:MM format, e.g. /settings reminder 09:00")
+            await message.answer("Invalid time. Use HH:MM format, e.g. <code>/settings reminder 09:00</code>", parse_mode="HTML")
 
     elif key == "today":
         if not value:
             await message.answer(
-                "Set a daily reminder with your active task count (Today + In Progress).\n"
-                "Example: /settings today 08:00\n"
-                "To disable: /settings today off"
+                "Set a daily reminder with your active task count.\n"
+                "Example: <code>/settings today 08:00</code>\n"
+                "To disable: <code>/settings today off</code>",
+                parse_mode="HTML",
             )
             return
         if value.lower() == "off":
             await repo.upsert(db_user.id, today_reminder_time=None)
-            await message.answer("Today reminder disabled.")
+            await message.answer("✅ Today reminder disabled.")
         elif _validate_time(value):
             await repo.upsert(db_user.id, today_reminder_time=value)
-            await message.answer(f"Today reminder set to {value}.")
+            await message.answer(f"✅ Today reminder set to <b>{value}</b>.", parse_mode="HTML")
         else:
-            await message.answer("Invalid time. Use HH:MM format, e.g. /settings today 08:00")
+            await message.answer("Invalid time. Use HH:MM format, e.g. <code>/settings today 08:00</code>", parse_mode="HTML")
 
     elif key == "timezone":
         if not value:
             await message.answer(
                 "Set your UTC offset so reminders fire at the right local time.\n"
-                "Examples: /settings timezone +3  or  /settings timezone -5:30"
+                "Examples: <code>/settings timezone +3</code>  or  <code>/settings timezone -5:30</code>",
+                parse_mode="HTML",
             )
             return
         try:
             minutes = _parse_tz_offset(value)
         except (ValueError, IndexError):
-            await message.answer("Invalid format. Examples: +3  or  -5:30")
+            await message.answer("Invalid format. Examples: <code>+3</code>  or  <code>-5:30</code>", parse_mode="HTML")
             return
         if not (-720 <= minutes <= 840):
             await message.answer("Offset out of range (-12:00 to +14:00).")
             return
         await repo.upsert(db_user.id, tz_offset_minutes=minutes)
-        await message.answer(f"Timezone set to UTC{value}.")
+        await message.answer(f"✅ Timezone set to <b>UTC{value}</b>.", parse_mode="HTML")
 
     else:
-        await message.answer(
-            "Unknown setting. Use /settings to see available commands."
-        )
+        await message.answer("Unknown setting. Use <code>/settings</code> to see available commands.", parse_mode="HTML")
