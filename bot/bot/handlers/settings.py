@@ -47,7 +47,8 @@ async def handle_settings(
 
     if not command.args:
         s = await repo.get(db_user.id)
-        lead = s.deadline_lead_hours if s else 24
+        raw_lead = s.deadline_lead_hours if s else "24"
+        lead = ", ".join(f"{h}h" for h in raw_lead.split(","))
         reminder = s.reminder_time if s else None
         today = s.today_reminder_time if s else None
         tz = s.tz_offset_minutes if s else 0
@@ -56,16 +57,16 @@ async def handle_settings(
         tz_str = f"{tz_sign}{tz_h}:{tz_m:02d}"
         await message.answer(
             f"<b>Current settings:</b>\n"
-            f"• deadline: <b>{lead}h</b> before\n"
-            f"• reminder: <b>{reminder or 'off'}</b>\n"
-            f"• today: <b>{today or 'off'}</b>\n"
+            f"• deadline: <b>{lead}</b> before\n"
+            f"• log activities reminder: <b>{reminder or 'off'}</b>\n"
+            f"• active tasks reminder: <b>{today or 'off'}</b>\n"
             f"• timezone: <b>UTC{tz_str}</b>\n"
             f"\n"
             f"<b>Commands:</b>\n"
-            f"<code>/settings deadline 24</code>\n"
-            f"<code>/settings reminder 09:00</code>\n"
+            f"<code>/settings deadline 24 72 168</code>\n"
+            f"<code>/settings reminder 09:00</code> — log activities\n"
             f"<code>/settings reminder off</code>\n"
-            f"<code>/settings today 08:00</code>\n"
+            f"<code>/settings today 08:00</code> — active tasks count\n"
             f"<code>/settings today off</code>\n"
             f"<code>/settings timezone +3</code>",
             parse_mode="HTML",
@@ -77,15 +78,23 @@ async def handle_settings(
     value = parts[1].strip() if len(parts) > 1 else None
 
     if key == "deadline":
-        if not value or not value.isdigit():
+        if not value:
             await message.answer(
                 "Set how many hours before a deadline to notify you.\n"
-                "Example: <code>/settings deadline 24</code>",
+                "One value or several space-separated:\n"
+                "<code>/settings deadline 24</code>\n"
+                "<code>/settings deadline 24 72 168</code>",
                 parse_mode="HTML",
             )
             return
-        await repo.upsert(db_user.id, deadline_lead_hours=int(value))
-        await message.answer(f"✅ Deadline lead time set to <b>{value}h</b>.", parse_mode="HTML")
+        hours = [v for v in value.split() if v.isdigit()]
+        if not hours:
+            await message.answer("Invalid value. Use hours, e.g. <code>/settings deadline 24 72 168</code>", parse_mode="HTML")
+            return
+        stored = ",".join(sorted(hours, key=int, reverse=True))
+        await repo.upsert(db_user.id, deadline_lead_hours=stored)
+        labels = ", ".join(f"<b>{h}h</b>" for h in hours)
+        await message.answer(f"✅ Deadline reminders set: {labels}.", parse_mode="HTML")
 
     elif key == "reminder":
         if not value:

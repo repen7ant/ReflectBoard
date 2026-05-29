@@ -1,4 +1,4 @@
-from sqlalchemy import BigInteger, Integer, SmallInteger, String
+from sqlalchemy import BigInteger, SmallInteger, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from bot.db.base import Base
@@ -16,7 +16,7 @@ class UserBotSettings(Base):
     __tablename__ = "user_bot_settings"
 
     user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    deadline_lead_hours: Mapped[int] = mapped_column(Integer, default=24)
+    deadline_lead_hours: Mapped[str] = mapped_column(String(50), default="24")
     reminder_time: Mapped[str | None] = mapped_column(String(5), nullable=True)
     today_reminder_time: Mapped[str | None] = mapped_column(String(5), nullable=True)
     tz_offset_minutes: Mapped[int] = mapped_column(SmallInteger, default=0)

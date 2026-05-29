@@ -33,7 +33,10 @@ async def check_deadlines(
     for user, user_settings in rows:
         if not user.api_token:
             continue
-        lead_hours = user_settings.deadline_lead_hours if user_settings else 24
+        raw_leads = user_settings.deadline_lead_hours if user_settings else "24"
+        lead_hours_list = [int(h.strip()) for h in raw_leads.split(",") if h.strip().isdigit()]
+        if not lead_hours_list:
+            lead_hours_list = [24]
 
         activities: list[dict] = []
         try:
@@ -47,35 +50,34 @@ async def check_deadlines(
             continue
 
         tz_offset = timedelta(minutes=user_settings.tz_offset_minutes if user_settings else 0)
-        # deadline is stored as naive local time; compare against local now
         now_local = (datetime.now(timezone.utc) + tz_offset).replace(tzinfo=None)
-        cutoff_local = now_local + timedelta(hours=lead_hours)
 
         for activity in activities:
             deadline_str = activity.get("deadline")
             if not deadline_str:
                 continue
             try:
-                # strip Z/offset if present, then treat as local naive
                 deadline_local = datetime.fromisoformat(deadline_str[:19])
             except ValueError:
                 continue
 
-            if not (now_local < deadline_local <= cutoff_local):
-                continue
+            for lead_hours in lead_hours_list:
+                cutoff_local = now_local + timedelta(hours=lead_hours)
+                if not (now_local < deadline_local <= cutoff_local):
+                    continue
 
-            dedup_key = f"notified:deadline:{user.id}:{activity['id']}:{deadline_local.date().isoformat()}"
-            if await redis.get(dedup_key):
-                continue
+                dedup_key = f"notified:deadline:{user.id}:{activity['id']}:{lead_hours}"
+                if await redis.get(dedup_key):
+                    continue
 
-            formatted = deadline_local.strftime("%b %d at %H:%M")
+                formatted = deadline_local.strftime("%b %d at %H:%M")
 
-            try:
-                await bot.send_message(
-                    user.telegram_id,
-                    f'⏰ <b>Deadline reminder</b>\n"{html.escape(activity["title"])}"\nDue: {formatted}',
-                    parse_mode="HTML",
-                )
-                await redis.setex(dedup_key, (lead_hours + 1) * 3600, "1")
-            except Exception:
-                await logger.awarning("Failed to send deadline notification", user_id=user.id)
+                try:
+                    await bot.send_message(
+                        user.telegram_id,
+                        f'⏰ <b>Deadline reminder</b>\n"{html.escape(activity["title"])}"\nDue: {formatted}',
+                        parse_mode="HTML",
+                    )
+                    await redis.setex(dedup_key, (lead_hours + 1) * 3600, "1")
+                except Exception:
+                    await logger.awarning("Failed to send deadline notification", user_id=user.id)
