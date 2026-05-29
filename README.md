@@ -2,7 +2,7 @@
 
 ![CI](https://github.com/repen7ant/ReflectBoard/actions/workflows/ci.yml/badge.svg)
 
-Трекер задач с рефлексией. Kanban-доска для ведения дел, журнал выполненного с фильтрацией, аналитика продуктивности по времени и категориям — всё обновляется в реальном времени через WebSocket.
+Трекер задач с рефлексией. Kanban-доска для ведения дел, журнал выполненного с фильтрацией, аналитика продуктивности по времени и категориям — всё обновляется в реальном времени через WebSocket. Telegram-бот для уведомлений, быстрого добавления задач и AI-анализа статистики.
 
 ---
 
@@ -16,13 +16,18 @@
   │                                       сессии / auth
   │
   ├─ REST /api/v1/*  ──────────────────►  FastAPI (Python)
-  │       Bearer JWT                          │         │
-  │                                         MySQL     Redis
+  │       Bearer token                         │         │
+  │                                          MySQL     Redis
   │
   └─ WS  /api/v1/ws?token=...  ────────►  FastAPI WebSocket
                                               │
                                          Redis pub/sub
                                          board:{user_id}
+
+Telegram Bot (aiogram 3)
+  ├─ Команды: /add, /stats, /analyze, /settings
+  ├─ REST → FastAPI (Bearer token из users.api_token)
+  └─ APScheduler: deadline-уведомления, ежедневные напоминания
 
 Nginx — обратный прокси:
   :80 /api/*  →  FastAPI :8000
@@ -45,14 +50,17 @@ cd ReflectBoard
 cp laravel/.env.example laravel/.env
 cp fastapi/.env.example fastapi/.env
 
-# 3. Поднять контейнеры
+# 3. Скопировать настройки бота и заполнить
+cp bot/settings.example.toml bot/settings.toml
+
+# 4. Поднять контейнеры
 docker compose up -d
 
-# 4. Миграции запускаются автоматически при старте laravel-контейнера.
+# 5. Миграции запускаются автоматически при старте laravel-контейнера.
 #    Если нужно запустить вручную:
 docker compose exec laravel php artisan migrate
 
-# 5. Открыть в браузере
+# 6. Открыть в браузере
 http://localhost
 ```
 
@@ -65,7 +73,8 @@ http://localhost
 **Аккаунт**
 
 - Зарегистрироваться по email/паролю или через GitHub OAuth
-- Войти — получить Bearer JWT, который Laravel прокидывает в мета-тег страницы
+- Войти — получить Bearer token, который Laravel прокидывает в мета-тег страницы
+- Привязать Telegram-аккаунт через кнопку на главной странице
 
 **Доска (`/board`)**
 
@@ -92,13 +101,22 @@ http://localhost
 - Распределение по категориям и облако тегов
 - Live-блок: активность за последние 24 часа из Redis
 
+**Telegram-бот**
+
+- `/add <название>` — быстро добавить задачу в Backlog
+- `/stats 7d|30d|90d|all` — статистика за период
+- `/analyze 7d|30d|90d|all` — AI-анализ статистики (Anthropic / OpenAI-compatible)
+- `/settings` — настройка уведомлений (дедлайны, напоминания, часовой пояс)
+- Уведомления о дедлайнах за настраиваемое время (можно задать несколько порогов)
+- Ежедневные напоминания: залогировать активности и просмотреть активные задачи
+
 ---
 
 ## Структура БД
 
 ```
 users
-  └─ id, email, password_hash
+  └─ id, email, password_hash, api_token, telegram_id
 
 categories
   └─ id, user_id → users, name, color
@@ -113,6 +131,13 @@ activities
   └─ is_project, is_on_board, is_quick_capture, is_productive  (флаги)
   └─ deadline, completed_at, time_spent_minutes, time_logged_minutes
   └─ tags (JSON), position
+
+user_bot_settings
+  └─ user_id → users
+  └─ deadline_lead_hours  (часы через запятую, напр. "168,72,24")
+  └─ reminder_time        (HH:MM или NULL)
+  └─ today_reminder_time  (HH:MM или NULL)
+  └─ tz_offset_minutes
 ```
 
 **Флаги активностей:**
@@ -125,20 +150,21 @@ activities
 | Подзадача на доске |     0      |    id     |      1      |        0         |
 | Быстрая запись     |     0      |   null    |      0      |        1         |
 
-**Redis:** ключи `stats:user:{id}:daily:{date}:category:{category_id}` — счётчики минут для live-аналитики. Канал `board:{user_id}` — WebSocket события.
+**Redis:** ключи `stats:user:{id}:daily:{date}:category:{category_id}` — счётчики минут для live-аналитики. Канал `board:{user_id}` — WebSocket события. Ключи `notified:deadline:*`, `notified:reminder:*`, `notified:today:*` — дедупликация уведомлений бота.
 
 ---
 
 ## Стек
 
-| Слой           | Технологии                              |
-| -------------- | --------------------------------------- |
-| Frontend       | Alpine.js, Vite, Blade-шаблоны          |
-| Backend (web)  | Laravel 11, PHP-FPM                     |
-| Backend (API)  | FastAPI, SQLAlchemy (async), Alembic    |
-| БД             | MySQL 8, Redis 7                        |
-| Инфраструктура | Docker Compose, Nginx                   |
-| Auth           | Laravel sessions + Bearer JWT → FastAPI |
+| Слой           | Технологии                                |
+| -------------- | ----------------------------------------- |
+| Frontend       | Alpine.js, Vite, Blade-шаблоны            |
+| Backend (web)  | Laravel 11, PHP-FPM                       |
+| Backend (API)  | FastAPI, SQLAlchemy (async)               |
+| Telegram Bot   | aiogram 3, APScheduler, httpx             |
+| БД             | MySQL 8, Redis 7                          |
+| Инфраструктура | Docker Compose, Nginx                     |
+| Auth           | Laravel sessions + Bearer token → FastAPI |
 
 ---
 
@@ -171,6 +197,17 @@ https://github.com/settings/developers
 #### В fastapi
 
 В `DATABASE_URL` ставим ранее указанный пароль (`MYSQL_PASSWORD`)
+
+#### Для бота
+
+Скопировать `bot/settings.example.toml` → `bot/settings.toml` и заполнить:
+- `bot.token` — токен от BotFather
+- `db.url` — использовать `db:3306` (Docker-сеть) и `MYSQL_PASSWORD`
+- `redis.url` — `redis://redis:6379`
+- `fastapi.base_url` — `http://fastapi:8000`
+- `web.board_url` — продакшен URL доски
+- `[ai]` — раскомментировать и заполнить если нужен `/analyze`
+- В `[logs]` поменять `renderer = "json"` и `use_colors_in_console = false`
 
 ### deploy.yml
 
@@ -225,25 +262,28 @@ IP в сети Tailscale
 mkdir ~/reflectboard
 mkdir -p ~/reflectboard/fastapi
 mkdir -p ~/reflectboard/laravel
+mkdir -p ~/reflectboard/bot
 mkdir -p ~/reflectboard/nginx/conf.d
 mkdir -p ~/reflectboard/mysql-conf
 ```
 
 2. Копируем `.env` файлы в соответствующие папки.
 
-3. Копируем `docker-compose.prod.yaml`.
+3. Создаём `bot/settings.toml` на основе `bot/settings.example.toml`.
 
-4. Копируем prod-версию nginx-конфига (`nginx/conf.d/prod.conf.disable`) и переименовываем в `default.conf`.
+4. Копируем `docker-compose.prod.yaml`.
 
-5. Копируем `mysql-conf/reflectboard.cnf` — настройки MySQL (buffer pool, max_connections и т.д.) под лимит контейнера 768M.
+5. Копируем prod-версию nginx-конфига (`nginx/conf.d/prod.conf.disable`) и переименовываем в `default.conf`.
 
-6. Логинимся в GHCR вручную (только один раз):
+6. Копируем `mysql-conf/reflectboard.cnf` — настройки MySQL (buffer pool, max_connections и т.д.) под лимит контейнера 768M.
+
+7. Логинимся в GHCR вручную (только один раз):
 
 ```bash
 echo ВАШ_GHCR_TOKEN | docker login ghcr.io -u ВАШ_GITHUB_USERNAME --password-stdin
 ```
 
-7. Делаем запуск вручную (только в первый раз):
+8. Делаем запуск вручную (только в первый раз):
 
 ```bash
 cd ~/reflectboard

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\GitHubController;
+use App\Http\Controllers\TelegramController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Route;
@@ -29,6 +30,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/board', fn () => view('board'))->name('board');
     Route::get('/done', fn () => view('done'))->name('done');
     Route::get('/analytics', fn () => view('analytics'))->name('analytics');
+    Route::post('/telegram/link', [TelegramController::class, 'generateLinkToken'])->name('telegram.link');
 });
 
 require __DIR__.'/auth.php';

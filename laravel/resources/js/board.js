@@ -149,7 +149,7 @@ export function board() {
             if (item.parent_id && !item.is_on_board) return;
             const col = this.activities[item.status];
             if (!col) return;
-            if (!col.find(a => a.id === item.id)) col.push(item);
+            if (!col.find(a => a.id === item.id)) col.unshift(item);
         },
 
         handleWsUpdate(item) {

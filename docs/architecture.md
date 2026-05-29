@@ -6,12 +6,14 @@
 
 ### Таблица `users`
 
-| Поле                        | Тип                          | Описание   |
-| --------------------------- | ---------------------------- | ---------- |
-| `id`                        | CHAR(36) PK                  | UUID       |
-| `email`                     | VARCHAR(255) UNIQUE NOT NULL | Email      |
-| `password_hash`             | VARCHAR(255) NOT NULL        | Хэш пароля |
-| `created_at` / `updated_at` | TIMESTAMP                    |            |
+| Поле                        | Тип                          | Описание                          |
+| --------------------------- | ---------------------------- | --------------------------------- |
+| `id`                        | BIGINT PK                    |                                   |
+| `email`                     | VARCHAR(255) UNIQUE NOT NULL | Email                             |
+| `password_hash`             | VARCHAR(255) NOT NULL        | Хэш пароля                        |
+| `api_token`                 | VARCHAR(80) UNIQUE           | Bearer-токен для FastAPI          |
+| `telegram_id`               | BIGINT UNIQUE nullable       | Привязанный Telegram-аккаунт      |
+| `created_at` / `updated_at` | TIMESTAMP                    |                                   |
 
 ### Таблица `categories`
 
@@ -58,6 +60,18 @@
 | Подзадача (внутри проекта) | 0            | `<uuid>`    | 0             | 0                  |
 | Подзадача на доске         | 0            | `<uuid>`    | 1             | 0                  |
 | Быстрая запись (FAB)       | 0            | null        | 0             | 1                  |
+
+### Таблица `user_bot_settings`
+
+| Поле                  | Тип                   | Описание                                      |
+| --------------------- | --------------------- | --------------------------------------------- |
+| `user_id`             | BIGINT PK FK → users  |                                               |
+| `deadline_lead_hours` | VARCHAR(50)           | Часы через запятую, напр. `"168,72,24"`       |
+| `reminder_time`       | VARCHAR(5) nullable   | Время напоминания залогировать активности     |
+| `today_reminder_time` | VARCHAR(5) nullable   | Время напоминания об активных задачах         |
+| `tz_offset_minutes`   | SMALLINT              | UTC-смещение пользователя в минутах           |
+
+---
 
 ## Механизм синхронизации (Dual-Write)
 
