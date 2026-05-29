@@ -13,10 +13,10 @@ base_url = "http://reflectboard-api.local"
 [web]
 board_url = "http://reflectboard.local/board"
 
-# [ai]
-# provider = "anthropic"           # "anthropic" or "openai_compatible"
-# api_key = "sk-ant-..."
-# base_url = "https://openrouter.ai/api/v1"  # only for openai_compatible
+[ai]
+provider = "anthropic" # "anthropic" or "openai_compatible"
+api_key = "sk-ant-..."
+# base_url = "https://openrouter.ai/api/v1" # only for openai_compatible
 
 [logs]
 project_name = "reflectboard_bot"
