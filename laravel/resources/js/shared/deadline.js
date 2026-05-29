@@ -6,14 +6,14 @@ export function parseDeadline(dt) {
     const timeRaw = timePart.slice(0, 5);
     return {
         date: datePart || '',
-        time: timeRaw === '00:00' ? '' : timeRaw,
+        time: timeRaw === '23:59' ? '' : timeRaw,
     };
 }
 
 // Build deadline string from form fields. Empty date → null.
 export function buildDeadline(date, time) {
     if (!date) return null;
-    return `${date}T${time || '00:00'}:00`;
+    return `${date}T${time || '23:59'}:00`;
 }
 
 // Classify deadline urgency by calendar-date proximity to today.
