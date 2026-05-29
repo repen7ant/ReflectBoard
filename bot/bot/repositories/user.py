@@ -16,7 +16,7 @@ class UserRepository:
 
     async def set_telegram_id(self, user_id: str, telegram_id: int) -> None:
         await self.session.execute(
-            update(User).where(User.id == user_id).values(telegram_id=telegram_id)
+            update(User).where(User.id == int(user_id)).values(telegram_id=telegram_id)
         )
         await self.session.commit()
 

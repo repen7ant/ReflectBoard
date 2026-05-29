@@ -28,6 +28,20 @@ class RedisConfig(BaseModel):
     url: str
 
 
+class FastapiConfig(BaseModel):
+    base_url: str
+
+
+class WebConfig(BaseModel):
+    board_url: str
+
+
+class AiConfig(BaseModel):
+    provider: str  # "anthropic" | "openai_compatible"
+    api_key: SecretStr
+    base_url: str | None = None  # only for openai_compatible
+
+
 class LogConfig(BaseModel):
     project_name: str
     show_datetime: bool
@@ -40,10 +54,6 @@ class LogConfig(BaseModel):
 
 
 class TomlConfigSettingsSource(PydanticBaseSettingsSource):
-    """
-    Источник для чтения настроек из TOML-файла.
-    """
-
     def get_field_value(self, field: Any, field_name: str) -> Tuple[Any, str, bool]:
         return None, field_name, False
 
@@ -60,13 +70,10 @@ class Settings(BaseSettings):
     logs: LogConfig
     db: DatabaseConfig
     redis: RedisConfig
+    fastapi: FastapiConfig
+    web: WebConfig
+    ai: AiConfig | None = None
 
-    """
-    Задаём параметры чтения конфига:
-    1. Разделитель вложенных ключей при чтении переменных окружения __
-    Т.е. ключ token внутри секции bot будет ожидаться как BOT__TOKEN
-    2. extra="ignore" - игнорируем любые ключи, которые не описаны в конфиге
-    """
     model_config = SettingsConfigDict(
         env_nested_delimiter="__",
         extra="ignore",
