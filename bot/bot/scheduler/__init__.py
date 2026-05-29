@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from bot.config import Settings
 from bot.scheduler.deadlines import check_deadlines
+from bot.scheduler.reminders import check_time_log_reminders, check_today_reminders
 
 
 def create_scheduler(
@@ -21,4 +22,6 @@ def create_scheduler(
         "settings": settings,
     }
     scheduler.add_job(check_deadlines, "cron", minute="0,30", kwargs=kwargs)
+    scheduler.add_job(check_time_log_reminders, "cron", minute="*", kwargs=kwargs)
+    scheduler.add_job(check_today_reminders, "cron", minute="*", kwargs=kwargs)
     return scheduler

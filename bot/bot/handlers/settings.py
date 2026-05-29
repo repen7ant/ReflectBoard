@@ -105,7 +105,7 @@ async def handle_settings(
     elif key == "today":
         if not value:
             await message.answer(
-                "Set a daily reminder showing your Today column.\n"
+                "Set a daily reminder with your active task count (Today + In Progress).\n"
                 "Example: /settings today 08:00\n"
                 "To disable: /settings today off"
             )
