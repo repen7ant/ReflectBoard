@@ -39,7 +39,7 @@
 | `description`             | TEXT nullable         | Описание                                          |
 | `reflection_text`         | TEXT nullable         | Рефлексия                                         |
 | `time_spent_minutes`      | INT nullable          | Суммарное затраченное время (минуты)              |
-| `time_logged_minutes`     | INT DEFAULT 0         | Время уже записанное в Redis через лог-кнопку     |
+| `time_logged_minutes`     | INT DEFAULT 0         | Время добавленное через лог-кнопку (не дублируется при завершении) |
 | `is_productive`           | TINYINT(1) DEFAULT 1  | Продуктивная активность (0 = непродуктивная)      |
 | `status`                  | ENUM NOT NULL         | `backlog\|today\|in_process\|done`                |
 | `is_project`              | TINYINT(1) DEFAULT 0  | Карточка является проектом                        |
@@ -73,19 +73,16 @@
 
 ---
 
-## Механизм синхронизации (Dual-Write)
+## Real-time обновления (WebSocket)
 
-FastAPI пишет в MySQL и Redis одновременно в двух сценариях:
+FastAPI публикует события в Redis-канал `board:{user_id}` при любом изменении активностей. Все открытые вкладки получают обновление без перезагрузки.
 
 **При логировании времени (`POST /activities/{id}/log-time`):**
 1. `time_spent_minutes += minutes`, `time_logged_minutes += minutes` → MySQL
-2. Инкремент Redis-счётчика на `minutes` → live-аналитика обновляется сразу
-3. WebSocket push → все вкладки видят обновлённый бейдж
+2. WebSocket push → все вкладки видят обновлённый бейдж
 
 **При завершении задачи или создании быстрой записи:**
 1. Запись результата → MySQL
-2. Инкремент Redis на дельту `time_spent - time_logged` (не дублируя уже залогированное)
-3. WebSocket push → задача уходит с доски
+2. WebSocket push → задача уходит с доски
 
-Ключи Redis: `stats:user:{id}:daily:{date}:category:{category_id}` — счётчики минут.
-Канал: `board:{user_id}` — WebSocket события.
+**Live-аналитика** (последние 24 часа) читается напрямую из MySQL: задачи со статусом `done` и `completed_at >= now - 24h`.

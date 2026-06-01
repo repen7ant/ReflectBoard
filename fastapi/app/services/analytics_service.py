@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.activity import Activity, Status
+from app.models.category import Category
 
 
 def _date_from_period(period: str, tz_offset: int) -> datetime | None:
@@ -132,6 +133,58 @@ class AnalyticsService:
             "heatmap": dict(heatmap),  # {"2025-05-01": 3, ...}
             "categories": categories,  # [{name, color, minutes, count}]
             "tags": tags,  # [{tag, count}]
+        }
+
+    @staticmethod
+    async def get_live_stats(db: AsyncSession, user_id: int) -> dict:
+        """Activities completed in the last 24 hours from MySQL."""
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+        result = await db.execute(
+            select(Activity)
+            .options(selectinload(Activity.category))
+            .where(
+                Activity.user_id == user_id,
+                Activity.status == Status.done,
+                Activity.completed_at >= cutoff,
+                Activity.completed_at.isnot(None),
+            )
+        )
+        activities = result.scalars().all()
+
+        productive_total = 0
+        unproductive_total = 0
+        by_category: dict[str, dict[str, int]] = {}
+
+        for a in activities:
+            minutes = a.time_spent_minutes or 0
+            kind = "productive" if a.is_productive else "unproductive"
+            cat_key = str(a.category_id) if a.category_id else "none"
+
+            if cat_key not in by_category:
+                by_category[cat_key] = {"productive": 0, "unproductive": 0}
+            by_category[cat_key][kind] += minutes
+
+            if a.is_productive:
+                productive_total += minutes
+            else:
+                unproductive_total += minutes
+
+        by_category_list = [
+            {
+                "category_id": int(k) if k != "none" else None,
+                "productive": v["productive"],
+                "unproductive": v["unproductive"],
+            }
+            for k, v in sorted(
+                by_category.items(),
+                key=lambda x: -(x[1]["productive"] + x[1]["unproductive"]),
+            )
+        ]
+
+        return {
+            "productive_minutes": productive_total,
+            "unproductive_minutes": unproductive_total,
+            "by_category": by_category_list,
         }
 
     @staticmethod

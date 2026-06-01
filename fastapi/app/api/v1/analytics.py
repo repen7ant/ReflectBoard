@@ -2,7 +2,6 @@ from app.db.session import get_db
 from app.dependencies.auth import get_current_user
 from app.models.user import User
 from app.services.analytics_service import AnalyticsService
-from app.services.redis_service import get_live_stats
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi import APIRouter, Depends, Query
@@ -20,6 +19,6 @@ async def get_analytics(
     historical = await AnalyticsService.get_analytics(
         db, current_user.id, period, tz_offset
     )
-    live = await get_live_stats(current_user.id)
+    live = await AnalyticsService.get_live_stats(db, current_user.id)
 
     return {**historical, "live": live}
