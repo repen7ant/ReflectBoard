@@ -1,3 +1,14 @@
+/* ─── Modal animations ─── */
+@keyframes modal-overlay-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes modal-in {
+    from { opacity: 0; transform: scale(0.96) translateY(-10px); }
+    to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
 /* ─── Modal overlay ─── */
 .modal-overlay {
     position: fixed;
@@ -9,6 +20,7 @@
     align-items: center;
     justify-content: center;
     padding: 1rem;
+    animation: modal-overlay-in 0.15s ease;
 }
 
 .modal {
@@ -22,6 +34,7 @@
     max-height: 90vh;
     overflow-y: auto;
     position: relative;
+    animation: modal-in 0.15s ease;
 }
 
 .modal-close {
