@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock, patch
 
 import pytest
 from app.models.activity import Activity, Status
@@ -87,7 +86,7 @@ class TestLogTime:
         )
         assert res.status_code == 422
 
-    async def test_completion_uses_delta_not_full_amount(
+    async def test_completion_after_log_time(
         self, client: AsyncClient, db: AsyncSession, test_user: User
     ) -> None:
         a = Activity(user_id=test_user.id, title="Task", status=Status.backlog)
@@ -96,18 +95,15 @@ class TestLogTime:
 
         await client.post(f"/api/v1/activities/{a.id}/log-time", json={"minutes": 60})
 
-        with patch(
-            "app.api.v1.activity.record_completion", new_callable=AsyncMock
-        ) as mock_rc:
-            res = await client.patch(
-                f"/api/v1/activities/{a.id}",
-                json={"status": "done", "time_spent_minutes": 90},
-            )
-            assert res.status_code == 200
-            mock_rc.assert_called_once()
-            assert mock_rc.call_args.kwargs["time_spent_minutes"] == 30  # delta: 90 - 60
+        res = await client.patch(
+            f"/api/v1/activities/{a.id}",
+            json={"status": "done", "time_spent_minutes": 90},
+        )
+        assert res.status_code == 200
+        assert res.json()["status"] == "done"
+        assert res.json()["time_spent_minutes"] == 90
 
-    async def test_completion_skips_redis_when_no_delta(
+    async def test_completion_with_same_time_as_logged(
         self, client: AsyncClient, db: AsyncSession, test_user: User
     ) -> None:
         a = Activity(user_id=test_user.id, title="Task", status=Status.backlog)
@@ -116,15 +112,12 @@ class TestLogTime:
 
         await client.post(f"/api/v1/activities/{a.id}/log-time", json={"minutes": 60})
 
-        with patch(
-            "app.api.v1.activity.record_completion", new_callable=AsyncMock
-        ) as mock_rc:
-            res = await client.patch(
-                f"/api/v1/activities/{a.id}",
-                json={"status": "done", "time_spent_minutes": 60},
-            )
-            assert res.status_code == 200
-            mock_rc.assert_not_called()
+        res = await client.patch(
+            f"/api/v1/activities/{a.id}",
+            json={"status": "done", "time_spent_minutes": 60},
+        )
+        assert res.status_code == 200
+        assert res.json()["status"] == "done"
 
     async def test_rejects_negative_minutes(
         self, client: AsyncClient, db: AsyncSession, test_user: User

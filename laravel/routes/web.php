@@ -24,6 +24,7 @@ Route::middleware('auth')->group(function () {
         request()->session()->invalidate();
         request()->session()->regenerateToken();
         $user->delete();
+
         return redirect('/');
     })->name('account.delete');
 });

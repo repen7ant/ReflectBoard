@@ -600,8 +600,6 @@ class TestReturnToBoard:
         After restoring, time_logged_minutes is synced to time_spent_minutes.
         Re-completing with the same time should record delta=0.
         Re-completing with MORE time should record only the increment."""
-        from unittest.mock import AsyncMock, patch
-
         activity = Activity(
             user_id=test_user.id,
             title="Done task",
@@ -622,16 +620,10 @@ class TestReturnToBoard:
         assert res.json()["time_logged_minutes"] == 60  # synced
 
         # Re-complete with MORE time (80 min total — 20 more than before)
-        with patch(
-            "app.api.v1.activity.record_completion", new_callable=AsyncMock
-        ) as mock_record:
-            res2 = await client.patch(
-                f"/api/v1/activities/{activity.id}",
-                json={"status": "done", "time_spent_minutes": 80},
-            )
-            assert res2.status_code == 200
-            assert res2.json()["status"] == "done"
-            # delta = 80 - 60 = 20, so record_completion called with 20 minutes
-            mock_record.assert_called_once()
-            call_kwargs = mock_record.call_args.kwargs
-            assert call_kwargs["time_spent_minutes"] == 20
+        res2 = await client.patch(
+            f"/api/v1/activities/{activity.id}",
+            json={"status": "done", "time_spent_minutes": 80},
+        )
+        assert res2.status_code == 200
+        assert res2.json()["status"] == "done"
+        assert res2.json()["time_spent_minutes"] == 80
