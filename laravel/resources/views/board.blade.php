@@ -12,19 +12,7 @@
 </head>
 <body x-data="board()" x-init="init()">
 
-    <!-- Topbar -->
-    <nav class="topbar">
-        <div class="topbar-logo">
-            <a href="/">
-                <img src="/icon.svg" alt="ReflectBoard" class="logo-icon">
-            </a>
-        </div>
-        <div class="nav-links">
-            <a href="/board" class="nav-link active">Board</a>
-            <a href="/done" class="nav-link">Done</a>
-            <a href="/analytics" class="nav-link">Analytics</a>
-        </div>
-    </nav>
+    <x-navbar active="board" />
 
     <!-- Board -->
     <div class="board-wrapper">

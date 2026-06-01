@@ -10,19 +10,7 @@
 </head>
 <body x-data="analyticsPage()" x-init="init()">
 
-    <!-- Topbar -->
-    <nav class="topbar">
-        <div class="topbar-logo">
-            <a href="/">
-                <img src="/icon.svg" alt="ReflectBoard" class="logo-icon">
-            </a>
-        </div>
-        <div class="nav-links">
-            <a href="/board" class="nav-link">Board</a>
-            <a href="/done" class="nav-link">Done</a>
-            <a href="/analytics" class="nav-link active">Analytics</a>
-        </div>
-    </nav>
+    <x-navbar active="analytics" />
 
     <!-- Page -->
     <div class="analytics-wrapper">

@@ -10,19 +10,7 @@
 </head>
 <body x-data="donePage()" x-init="init()">
 
-    <!-- Topbar -->
-    <nav class="topbar">
-        <div class="topbar-logo">
-            <a href="/">
-                <img src="/icon.svg" alt="ReflectBoard" class="logo-icon">
-            </a>
-        </div>
-        <div class="nav-links">
-            <a href="/board" class="nav-link">Board</a>
-            <a href="/done" class="nav-link active">Done</a>
-            <a href="/analytics" class="nav-link">Analytics</a>
-        </div>
-    </nav>
+    <x-navbar active="done" />
 
     <!-- Done Page -->
     <div class="done-wrapper">

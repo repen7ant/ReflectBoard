@@ -31,6 +31,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/done', fn () => view('done'))->name('done');
     Route::get('/analytics', fn () => view('analytics'))->name('analytics');
     Route::post('/telegram/link', [TelegramController::class, 'generateLinkToken'])->name('telegram.link');
+    Route::delete('/account', function () {
+        $user = auth()->user();
+        auth()->logout();
+        request()->session()->invalidate();
+        request()->session()->regenerateToken();
+        $user->delete();
+        return redirect('/');
+    })->name('account.delete');
 });
 
 require __DIR__.'/auth.php';
