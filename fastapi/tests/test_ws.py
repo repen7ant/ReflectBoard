@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from app.main import app
 from httpx import AsyncClient
-from httpx_ws import AsyncWebSocketSession, WebSocketDisconnect, aconnect_ws
+from httpx_ws import WebSocketDisconnect, aconnect_ws
 from httpx_ws.transport import ASGIWebSocketTransport
 
 pytestmark = pytest.mark.asyncio

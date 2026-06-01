@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Http\Controllers\Auth\GitHubController;
 use App\Http\Controllers\TelegramController;
 use Illuminate\Support\Facades\Redis;
@@ -21,7 +23,7 @@ Route::middleware('auth')->group(function () {
         $user = auth()->user();
         try {
             Redis::del("auth_token:{$user->api_token}");
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Cache invalidation is best-effort
         }
         auth()->logout();
