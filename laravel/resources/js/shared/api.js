@@ -17,17 +17,21 @@ export function requireAuthOrRedirect() {
 }
 
 // ─── WebSocket ────────────────────────────────────────
-const WS_RECONNECT_MS = 3000;
+const WS_BACKOFF_BASE_MS  = 1000;
+const WS_BACKOFF_MAX_MS   = 30000;
 
-export function initWebSocket(apiBase, token, onmessage) {
+export function initWebSocket(apiBase, token, onmessage, _attempt = 0) {
     const url = new URL(apiBase);
     const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${wsProtocol}//${url.host}/api/v1/ws?token=${token}`;
 
     const ws = new WebSocket(wsUrl);
     ws.onmessage = (event) => onmessage(JSON.parse(event.data));
+    ws.onopen = () => { _attempt = 0; };
     ws.onclose = () => {
-        setTimeout(() => initWebSocket(apiBase, token, onmessage), WS_RECONNECT_MS);
+        const delay = Math.min(WS_BACKOFF_BASE_MS * 2 ** _attempt, WS_BACKOFF_MAX_MS);
+        const jitter = Math.random() * 0.3 * delay;
+        setTimeout(() => initWebSocket(apiBase, token, onmessage, _attempt + 1), delay + jitter);
     };
     return ws;
 }
