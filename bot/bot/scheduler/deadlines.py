@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from bot.config import Settings
-from bot.db.models import User, UserBotSettings
+from bot.db.models import User, UserBotSettings, parse_lead_hours
 from bot.fastapi_client import get_client
 
 logger = structlog.get_logger()
@@ -33,10 +33,7 @@ async def check_deadlines(
     for user, user_settings in rows:
         if not user.api_token:
             continue
-        raw_leads = user_settings.deadline_lead_hours if user_settings else "24"
-        lead_hours_list = [int(h.strip()) for h in raw_leads.split(",") if h.strip().isdigit()]
-        if not lead_hours_list:
-            lead_hours_list = [24]
+        lead_hours_list = parse_lead_hours(user_settings.deadline_lead_hours if user_settings else None)
 
         activities: list[dict] = []
         try:

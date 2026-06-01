@@ -4,6 +4,13 @@ from sqlalchemy.orm import Mapped, mapped_column
 from bot.db.base import Base
 
 
+def parse_lead_hours(raw: str | None) -> list[int]:
+    if not raw:
+        return [24]
+    parsed = [int(h.strip()) for h in raw.split(",") if h.strip().isdigit()]
+    return parsed if parsed else [24]
+
+
 class User(Base):
     __tablename__ = "users"
 

@@ -4,6 +4,8 @@ from aiogram.filters.command import CommandObject
 from aiogram.types import Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from bot.db.models import parse_lead_hours
+
 from bot.db.models import User
 from bot.repositories.bot_settings import BotSettingsRepository
 
@@ -47,8 +49,7 @@ async def handle_settings(
 
     if not command.args:
         s = await repo.get(db_user.id)
-        raw_lead = s.deadline_lead_hours if s else "24"
-        lead = ", ".join(f"{h}h" for h in raw_lead.split(","))
+        lead = ", ".join(f"{h}h" for h in parse_lead_hours(s.deadline_lead_hours if s else None))
         reminder = s.reminder_time if s else None
         today = s.today_reminder_time if s else None
         tz = s.tz_offset_minutes if s else 0
