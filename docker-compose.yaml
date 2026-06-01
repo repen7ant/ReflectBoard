@@ -90,14 +90,14 @@ services:
     depends_on:
       - laravel
 
-  bot:
-    build:
-      context: ./bot
-    container_name: reflectboard-bot
-    restart: unless-stopped
-    network_mode: host
-    volumes:
-      - ./bot:/app
+  # bot:
+  #   build:
+  #     context: ./bot
+  #   container_name: reflectboard-bot
+  #   restart: unless-stopped
+  #   network_mode: host
+  #   volumes:
+  #     - ./bot:/app
 
   nginx:
     image: nginx:stable-alpine

@@ -105,8 +105,14 @@ export function analyticsPage() {
             }
 
             const weekCount = Math.ceil(days.length / 7);
-            canvas.width = paddingLeft + weekCount * (cellSize + cellGap);
-            canvas.height = paddingTop + 7 * (cellSize + cellGap);
+            const logicalWidth = paddingLeft + weekCount * (cellSize + cellGap);
+            const logicalHeight = paddingTop + 7 * (cellSize + cellGap);
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = logicalWidth * dpr;
+            canvas.height = logicalHeight * dpr;
+            canvas.style.width = logicalWidth + 'px';
+            canvas.style.height = logicalHeight + 'px';
+            ctx.scale(dpr, dpr);
 
             const maxCount = Math.max(1, ...Object.values(heatmap));
 
@@ -274,10 +280,16 @@ export function analyticsPage() {
             const valueWidth = 70;
             const padding = 10;
 
-            canvas.width = canvas.parentElement.clientWidth || 400;
-            canvas.height = categories.length * (barHeight + barGap) + padding * 2;
+            const logicalWidth = canvas.parentElement.clientWidth || 400;
+            const logicalHeight = categories.length * (barHeight + barGap) + padding * 2;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = logicalWidth * dpr;
+            canvas.height = logicalHeight * dpr;
+            canvas.style.width = logicalWidth + 'px';
+            canvas.style.height = logicalHeight + 'px';
+            ctx.scale(dpr, dpr);
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, logicalWidth, logicalHeight);
 
             const barMaxWidth = canvas.width - labelWidth - valueWidth - padding * 2;
 
