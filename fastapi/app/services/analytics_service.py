@@ -6,7 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.activity import Activity, Status
-from app.models.category import Category
 
 
 def _date_from_period(period: str, tz_offset: int) -> datetime | None:
