@@ -1,27 +1,31 @@
 import asyncio
+import json
 
 from app.db.redis import redis_client
 from app.db.session import get_db
 from app.dependencies.auth import get_ws_user
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 
 router = APIRouter(prefix="/api/v1")
 
 
 @router.websocket("/ws")
-async def websocket_endpoint(
-    websocket: WebSocket, token: str = Query(...), db: AsyncSession = Depends(get_db)
-):
-    user = await get_ws_user(token, db)
-    print(f"WS CONNECTION ATTEMPT: Token={token}, Found User={user}")
-    if not user:
-        # 1008 - Policy Violation (невалидный токен)
+async def websocket_endpoint(websocket: WebSocket, db: AsyncSession = Depends(get_db)):
+    await websocket.accept()
+
+    try:
+        raw = await asyncio.wait_for(websocket.receive_text(), timeout=5.0)
+        token = json.loads(raw).get("token", "")
+    except Exception:
         await websocket.close(code=1008)
         return
 
-    await websocket.accept()
+    user = await get_ws_user(token, db)
+    if not user:
+        await websocket.close(code=1008)
+        return
 
     pubsub = redis_client.pubsub()
     channel_name = f"board:{user.id}"
