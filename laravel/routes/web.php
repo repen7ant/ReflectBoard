@@ -5,6 +5,7 @@ use App\Http\Controllers\TelegramController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 
 Route::get('/', function () {
     return view('welcome');
@@ -33,6 +34,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/telegram/link', [TelegramController::class, 'generateLinkToken'])->name('telegram.link');
     Route::delete('/account', function () {
         $user = auth()->user();
+        Redis::del("auth_token:{$user->api_token}");
         auth()->logout();
         request()->session()->invalidate();
         request()->session()->regenerateToken();
