@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from app.main import app
 from httpx import AsyncClient
-from httpx_ws import WebSocketDisconnect, aconnect_ws
+from httpx_ws import AsyncWebSocketSession, WebSocketDisconnect, aconnect_ws
 from httpx_ws.transport import ASGIWebSocketTransport
 
 pytestmark = pytest.mark.asyncio
@@ -20,12 +20,12 @@ class TestWebSocket:
                 disconnected = False
                 disconnect_code = None
                 try:
-                    async with aconnect_ws("/api/v1/ws", ws_client) as ws:
+                    async with aconnect_ws("/api/v1/ws", ws_client) as ws:  # type: ignore[var-annotated]
                         await ws.send_text(json.dumps({"token": "invalid_token"}))
                         await asyncio.wait_for(ws.receive_text(), timeout=2.0)
                 except* WebSocketDisconnect as eg:
                     disconnected = True
-                    disconnect_code = eg.exceptions[0].code
+                    disconnect_code = eg.exceptions[0].code  # type: ignore[union-attr]
                 assert disconnected
                 assert disconnect_code == 1008
 
@@ -51,7 +51,7 @@ class TestWebSocket:
             async with AsyncClient(
                 transport=ASGIWebSocketTransport(app=app), base_url="http://test"
             ) as ws_client:
-                async with aconnect_ws("/api/v1/ws", ws_client) as ws:  # type: ignore
+                async with aconnect_ws("/api/v1/ws", ws_client) as ws:  # type: ignore[var-annotated]
                     await ws.send_text(json.dumps({"token": "valid_token"}))
                     assert ws is not None
 
@@ -79,7 +79,7 @@ class TestWebSocket:
             async with AsyncClient(
                 transport=ASGIWebSocketTransport(app=app), base_url="http://test"
             ) as ws_client:
-                async with aconnect_ws("/api/v1/ws", ws_client) as ws:  # type: ignore
+                async with aconnect_ws("/api/v1/ws", ws_client) as ws:  # type: ignore[var-annotated]
                     await ws.send_text(json.dumps({"token": "valid_token"}))
                     received = await asyncio.wait_for(ws.receive_text(), timeout=2.0)
                     data = json.loads(received)
@@ -109,7 +109,7 @@ class TestWebSocket:
             async with AsyncClient(
                 transport=ASGIWebSocketTransport(app=app), base_url="http://test"
             ) as ws_client:
-                async with aconnect_ws("/api/v1/ws", ws_client) as ws:
+                async with aconnect_ws("/api/v1/ws", ws_client) as ws:  # type: ignore[var-annotated]
                     await ws.send_text(json.dumps({"token": "valid_token"}))
 
             mock_pubsub.subscribe.assert_called_once_with(f"board:{test_user.id}")

@@ -19,7 +19,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/telegram/link', [TelegramController::class, 'generateLinkToken'])->name('telegram.link');
     Route::delete('/account', function () {
         $user = auth()->user();
-        Redis::del("auth_token:{$user->api_token}");
+        try {
+            Redis::del("auth_token:{$user->api_token}");
+        } catch (\Exception $e) {
+            // Cache invalidation is best-effort
+        }
         auth()->logout();
         request()->session()->invalidate();
         request()->session()->regenerateToken();

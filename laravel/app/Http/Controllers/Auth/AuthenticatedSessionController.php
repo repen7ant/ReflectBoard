@@ -42,7 +42,11 @@ class AuthenticatedSessionController extends Controller
         if ($user) {
             $oldToken = $user->api_token;
             $user->update(['api_token' => Str::random(60)]);
-            Redis::del("auth_token:{$oldToken}");
+            try {
+                Redis::del("auth_token:{$oldToken}");
+            } catch (\Exception $e) {
+                // Cache invalidation is best-effort
+            }
         }
 
         Auth::guard('web')->logout();
