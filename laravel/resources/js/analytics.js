@@ -280,18 +280,18 @@ export function analyticsPage() {
             const valueWidth = 70;
             const padding = 10;
 
-            const logicalWidth = canvas.parentElement.clientWidth || 400;
+            canvas.style.width = '100%';
+            const logicalWidth = canvas.clientWidth || 400;
             const logicalHeight = categories.length * (barHeight + barGap) + padding * 2;
             const dpr = window.devicePixelRatio || 1;
             canvas.width = logicalWidth * dpr;
             canvas.height = logicalHeight * dpr;
-            canvas.style.width = logicalWidth + 'px';
             canvas.style.height = logicalHeight + 'px';
             ctx.scale(dpr, dpr);
 
             ctx.clearRect(0, 0, logicalWidth, logicalHeight);
 
-            const barMaxWidth = canvas.width - labelWidth - valueWidth - padding * 2;
+            const barMaxWidth = logicalWidth - labelWidth - valueWidth - padding * 2;
 
             categories.forEach((cat, i) => {
                 const y = padding + i * (barHeight + barGap);
