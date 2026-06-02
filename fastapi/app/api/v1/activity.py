@@ -4,7 +4,7 @@ from datetime import date
 from app.db.redis import redis_client
 from app.db.session import get_db
 from app.dependencies.auth import get_current_user
-from app.models.activity import Status
+from app.models.activity import Activity, Status
 from app.models.user import User
 from app.schemas.activity import ActivityCreate, ActivityOut, ActivityUpdate, LogTimeRequest
 from app.services.activity_service import ActivityService
@@ -14,6 +14,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 router = APIRouter(prefix="/api/v1", tags=["Activities"])
+
+
+async def _publish(user_id: int, action: str, data: dict) -> None:
+    payload = json.dumps({"action": action, "data": data})
+    await redis_client.publish(f"board:{user_id}", payload)
+
+
+async def _publish_activity(user_id: int, action: str, activity: Activity) -> None:
+    out = ActivityOut.model_validate(activity)
+    await _publish(user_id, action, jsonable_encoder(out))
 
 
 @router.get("/activities", response_model=list[ActivityOut])
@@ -60,16 +70,9 @@ async def create_activity(
 ):
     activity, parent = await ActivityService.create_activity(db, data, current_user.id)
 
-    activity_out = ActivityOut.model_validate(activity)
-    payload = json.dumps({"action": "create", "data": jsonable_encoder(activity_out)})
-    await redis_client.publish(f"board:{current_user.id}", payload)
-
+    await _publish_activity(current_user.id, "create", activity)
     if parent:
-        parent_out = ActivityOut.model_validate(parent)
-        parent_payload = json.dumps(
-            {"action": "update", "data": jsonable_encoder(parent_out)}
-        )
-        await redis_client.publish(f"board:{current_user.id}", parent_payload)
+        await _publish_activity(current_user.id, "update", parent)
 
     return activity
 
@@ -86,19 +89,14 @@ async def delete_activity(
     if not deleted:
         raise HTTPException(status_code=404, detail="Activity not found")
 
-    payload = json.dumps({"action": "delete", "data": {"id": activity_id}})
-    await redis_client.publish(f"board:{current_user.id}", payload)
+    await _publish(current_user.id, "delete", {"id": activity_id})
 
     if parent_id:
         parent = await ActivityService.get_activity_by_id(
             db, parent_id, current_user.id
         )
         if parent:
-            parent_out = ActivityOut.model_validate(parent)
-            parent_payload = json.dumps(
-                {"action": "update", "data": jsonable_encoder(parent_out)}
-            )
-            await redis_client.publish(f"board:{current_user.id}", parent_payload)
+            await _publish_activity(current_user.id, "update", parent)
 
 
 @router.patch("/activities/{activity_id}", response_model=ActivityOut)
@@ -116,16 +114,9 @@ async def update_activity(
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
 
-    activity_out = ActivityOut.model_validate(activity)
-    payload = json.dumps({"action": "update", "data": jsonable_encoder(activity_out)})
-    await redis_client.publish(f"board:{current_user.id}", payload)
-
+    await _publish_activity(current_user.id, "update", activity)
     if parent:
-        parent_out = ActivityOut.model_validate(parent)
-        parent_payload = json.dumps(
-            {"action": "update", "data": jsonable_encoder(parent_out)}
-        )
-        await redis_client.publish(f"board:{current_user.id}", parent_payload)
+        await _publish_activity(current_user.id, "update", parent)
 
     return activity
 
@@ -148,9 +139,7 @@ async def log_time(
     await db.commit()
     await db.refresh(activity)
 
-    activity_out = ActivityOut.model_validate(activity)
-    payload = json.dumps({"action": "update", "data": jsonable_encoder(activity_out)})
-    await redis_client.publish(f"board:{current_user.id}", payload)
+    await _publish_activity(current_user.id, "update", activity)
 
     return activity
 
@@ -173,7 +162,6 @@ async def reorder_activities(
         ordered_ids=ordered_ids,
     )
 
-    payload = json.dumps({"action": "reorder", "data": {}})
-    await redis_client.publish(f"board:{current_user.id}", payload)
+    await _publish(current_user.id, "reorder", {})
 
     return {"success": True}
