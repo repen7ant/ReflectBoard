@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from datetime import date, datetime, time, timedelta
 
 from sqlalchemy import String, func, or_, select, update
@@ -46,6 +47,79 @@ class ActivityService:
             activity.subtasks_done = 0
 
     @staticmethod
+    async def _attach_subtask_meta(
+        db: AsyncSession, activities: Sequence[Activity]
+    ) -> None:
+        """Set subtasks_total/done for projects and parent_title for subtasks (batched)."""
+        project_ids = [a.id for a in activities if a.is_project]
+        counts: dict[int, list[int]] = {}  # {project_id: [total, done]}
+
+        if project_ids:
+            total_result = await db.execute(
+                select(Activity.parent_id, func.count().label("cnt"))
+                .where(Activity.parent_id.in_(project_ids))
+                .group_by(Activity.parent_id)
+            )
+            for parent_id, cnt in total_result.all():
+                counts.setdefault(parent_id, [0, 0])
+                counts[parent_id][0] = cnt
+
+            done_result = await db.execute(
+                select(Activity.parent_id, func.count().label("cnt"))
+                .where(
+                    Activity.parent_id.in_(project_ids),
+                    Activity.status == Status.done,
+                )
+                .group_by(Activity.parent_id)
+            )
+            for parent_id, cnt in done_result.all():
+                counts.setdefault(parent_id, [0, 0])
+                counts[parent_id][1] = cnt
+
+        subtask_ids = [a.parent_id for a in activities if a.parent_id]
+        parent_titles: dict[int, str] = {}
+        if subtask_ids:
+            parent_result = await db.execute(
+                select(Activity.id, Activity.title).where(Activity.id.in_(subtask_ids))
+            )
+            parent_titles = {pid: title for pid, title in parent_result.all()}
+
+        for a in activities:
+            if a.is_project and a.id in counts:
+                a.subtasks_total = counts[a.id][0]
+                a.subtasks_done = counts[a.id][1]
+            else:
+                a.subtasks_total = 0
+                a.subtasks_done = 0
+
+            a.parent_title = parent_titles.get(a.parent_id) if a.parent_id else None
+
+    @staticmethod
+    async def _recalc_and_get_parent(
+        db: AsyncSession, activity: Activity, user_id: int
+    ) -> Activity | None:
+        """Recalc counters for the activity and its parent project (if a subtask).
+
+        Sets activity.parent_title and returns the parent project, or None.
+        """
+        await ActivityService._calculate_subtasks_counters(db, activity)
+
+        if not activity.parent_id:
+            activity.parent_title = None
+            return None
+
+        parent_result = await db.execute(
+            select(Activity)
+            .options(selectinload(Activity.category))
+            .where(Activity.id == activity.parent_id, Activity.user_id == user_id)
+        )
+        parent = parent_result.scalar_one_or_none()
+        if parent:
+            await ActivityService._calculate_subtasks_counters(db, parent)
+            activity.parent_title = parent.title
+        return parent
+
+    @staticmethod
     async def get_activities(
         db: AsyncSession,
         user_id: int,
@@ -74,53 +148,7 @@ class ActivityService:
         result = await db.execute(query)
         activities = result.scalars().all()
 
-        project_ids = [a.id for a in activities if a.is_project]
-        counts: dict[int, list[int]] = {}  # {project_id: [total, done]}
-
-        if project_ids:
-            total_result = await db.execute(
-                select(Activity.parent_id, func.count().label("cnt"))
-                .where(Activity.parent_id.in_(project_ids))
-                .group_by(Activity.parent_id)
-            )
-            for parent_id, cnt in total_result.all():
-                counts.setdefault(parent_id, [0, 0])
-                counts[parent_id][0] = cnt
-
-            done_result = await db.execute(
-                select(Activity.parent_id, func.count().label("cnt"))
-                .where(
-                    Activity.parent_id.in_(project_ids),
-                    Activity.status == Status.done,
-                )
-                .group_by(Activity.parent_id)
-            )
-            for parent_id, cnt in done_result.all():
-                counts.setdefault(parent_id, [0, 0])
-                counts[parent_id][1] = cnt
-
-        # Get parent titles for subtasks
-        subtask_ids = [a.parent_id for a in activities if a.parent_id]
-        parent_titles = {}
-        if subtask_ids:
-            parent_result = await db.execute(
-                select(Activity.id, Activity.title).where(Activity.id.in_(subtask_ids))
-            )
-            parent_titles = {pid: title for pid, title in parent_result.all()}
-
-        for a in activities:
-            if a.is_project and a.id in counts:
-                a.subtasks_total = counts[a.id][0]
-                a.subtasks_done = counts[a.id][1]
-            else:
-                a.subtasks_total = 0
-                a.subtasks_done = 0
-
-            # Set parent title for subtasks
-            if a.parent_id and a.parent_id in parent_titles:
-                a.parent_title = parent_titles[a.parent_id]
-            else:
-                a.parent_title = None
+        await ActivityService._attach_subtask_meta(db, activities)
 
         return activities
 
@@ -161,23 +189,7 @@ class ActivityService:
         )
         activity = result.scalar_one()
 
-        # Calculate subtasks counters
-        await ActivityService._calculate_subtasks_counters(db, activity)
-
-        # If this is a subtask, get updated parent project
-        parent = None
-        if activity.parent_id:
-            parent_result = await db.execute(
-                select(Activity)
-                .options(selectinload(Activity.category))
-                .where(Activity.id == activity.parent_id, Activity.user_id == user_id)
-            )
-            parent = parent_result.scalar_one_or_none()
-            if parent:
-                await ActivityService._calculate_subtasks_counters(db, parent)
-                activity.parent_title = parent.title
-        else:
-            activity.parent_title = None
+        parent = await ActivityService._recalc_and_get_parent(db, activity, user_id)
 
         return activity, parent
 
@@ -248,23 +260,7 @@ class ActivityService:
         await db.commit()
         await db.refresh(activity)
 
-        # Calculate subtasks counters
-        await ActivityService._calculate_subtasks_counters(db, activity)
-
-        # If this is a subtask, get updated parent project
-        parent = None
-        if activity.parent_id:
-            parent_result = await db.execute(
-                select(Activity)
-                .options(selectinload(Activity.category))
-                .where(Activity.id == activity.parent_id, Activity.user_id == user_id)
-            )
-            parent = parent_result.scalar_one_or_none()
-            if parent:
-                await ActivityService._calculate_subtasks_counters(db, parent)
-                activity.parent_title = parent.title
-        else:
-            activity.parent_title = None
+        parent = await ActivityService._recalc_and_get_parent(db, activity, user_id)
 
         return activity, parent
 
@@ -338,54 +334,6 @@ class ActivityService:
         result = await db.execute(query)
         activities = result.scalars().all()
 
-        # Calculate subtasks counters for projects
-        project_ids = [a.id for a in activities if a.is_project]
-        counts: dict[int, list[int]] = {}  # {project_id: [total, done]}
-
-        if project_ids:
-            total_result = await db.execute(
-                select(Activity.parent_id, func.count().label("cnt"))
-                .where(Activity.parent_id.in_(project_ids))
-                .group_by(Activity.parent_id)
-            )
-            for parent_id, cnt in total_result.all():
-                counts.setdefault(parent_id, [0, 0])
-                counts[parent_id][0] = cnt
-
-            done_result = await db.execute(
-                select(Activity.parent_id, func.count().label("cnt"))
-                .where(
-                    Activity.parent_id.in_(project_ids),
-                    Activity.status == Status.done,
-                )
-                .group_by(Activity.parent_id)
-            )
-            for parent_id, cnt in done_result.all():
-                counts.setdefault(parent_id, [0, 0])
-                counts[parent_id][1] = cnt
-
-        # Get parent titles for subtasks
-        subtask_ids = [a.parent_id for a in activities if a.parent_id]
-        parent_titles = {}
-        if subtask_ids:
-            parent_result = await db.execute(
-                select(Activity.id, Activity.title).where(Activity.id.in_(subtask_ids))
-            )
-            parent_titles = {pid: title for pid, title in parent_result.all()}
-
-        for a in activities:
-            # Set subtasks counters for projects
-            if a.is_project and a.id in counts:
-                a.subtasks_total = counts[a.id][0]
-                a.subtasks_done = counts[a.id][1]
-            else:
-                a.subtasks_total = 0
-                a.subtasks_done = 0
-
-            # Set parent title for subtasks
-            if a.parent_id and a.parent_id in parent_titles:
-                a.parent_title = parent_titles[a.parent_id]
-            else:
-                a.parent_title = None
+        await ActivityService._attach_subtask_meta(db, activities)
 
         return activities
