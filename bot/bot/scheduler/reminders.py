@@ -1,16 +1,46 @@
+from collections.abc import AsyncIterator
 from datetime import datetime, timedelta, timezone
 
 import structlog
 from aiogram import Bot
 from redis.asyncio import Redis
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from bot.config import Settings
-from bot.db.models import User, UserBotSettings
+from bot.db.models import User
 from bot.fastapi_client import get_client
+from bot.scheduler._common import fetch_users_with_settings
 
 logger = structlog.get_logger()
+
+
+async def _due_users(
+    session_factory: async_sessionmaker[AsyncSession],
+    redis: Redis,
+    *,
+    time_field: str,
+    dedup_prefix: str,
+) -> AsyncIterator[tuple[User, str]]:
+    """Yield (user, dedup_key) for users whose `time_field` setting matches the current
+    local minute and who haven't been notified yet today."""
+    now_utc = datetime.now(timezone.utc)
+    for user, user_settings in await fetch_users_with_settings(session_factory):
+        if not user_settings:
+            continue
+        target = getattr(user_settings, time_field)
+        if not target:
+            continue
+
+        local_now = now_utc + timedelta(minutes=user_settings.tz_offset_minutes)
+        if local_now.strftime("%H:%M") != target:
+            continue
+
+        local_date = local_now.date().isoformat()
+        dedup_key = f"notified:{dedup_prefix}:{user.id}:{local_date}"
+        if await redis.get(dedup_key):
+            continue
+
+        yield user, dedup_key
 
 
 async def check_time_log_reminders(
@@ -19,30 +49,9 @@ async def check_time_log_reminders(
     redis: Redis,
     settings: Settings,
 ) -> None:
-    now_utc = datetime.now(timezone.utc)
-
-    async with session_factory() as session:
-        result = await session.execute(
-            select(User, UserBotSettings)
-            .outerjoin(UserBotSettings, User.id == UserBotSettings.user_id)
-            .where(User.telegram_id.isnot(None))
-        )
-        rows = result.all()
-
-    for user, user_settings in rows:
-        if not user_settings or not user_settings.reminder_time:
-            continue
-
-        tz_offset = timedelta(minutes=user_settings.tz_offset_minutes)
-        local_now = now_utc + tz_offset
-        if local_now.strftime("%H:%M") != user_settings.reminder_time:
-            continue
-
-        local_date = local_now.date().isoformat()
-        dedup_key = f"notified:reminder:{user.id}:{local_date}"
-        if await redis.get(dedup_key):
-            continue
-
+    async for user, dedup_key in _due_users(
+        session_factory, redis, time_field="reminder_time", dedup_prefix="reminder"
+    ):
         try:
             await bot.send_message(
                 user.telegram_id,
@@ -59,30 +68,9 @@ async def check_today_reminders(
     redis: Redis,
     settings: Settings,
 ) -> None:
-    now_utc = datetime.now(timezone.utc)
-
-    async with session_factory() as session:
-        result = await session.execute(
-            select(User, UserBotSettings)
-            .outerjoin(UserBotSettings, User.id == UserBotSettings.user_id)
-            .where(User.telegram_id.isnot(None))
-        )
-        rows = result.all()
-
-    for user, user_settings in rows:
-        if not user_settings or not user_settings.today_reminder_time:
-            continue
-
-        tz_offset = timedelta(minutes=user_settings.tz_offset_minutes)
-        local_now = now_utc + tz_offset
-        if local_now.strftime("%H:%M") != user_settings.today_reminder_time:
-            continue
-
-        local_date = local_now.date().isoformat()
-        dedup_key = f"notified:today:{user.id}:{local_date}"
-        if await redis.get(dedup_key):
-            continue
-
+    async for user, dedup_key in _due_users(
+        session_factory, redis, time_field="today_reminder_time", dedup_prefix="today"
+    ):
         if not user.api_token:
             continue
 
