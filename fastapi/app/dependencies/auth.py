@@ -10,34 +10,8 @@ from fastapi import Depends, HTTPException, status
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-async def get_current_user(
-    token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)
-) -> User:
-    cache_key = f"auth_token:{token}"
-
-    user_id = await redis_client.get(cache_key)
-
-    if user_id:
-        result = await db.execute(select(User).where(User.id == int(user_id)))
-        user = result.scalar_one_or_none()
-    else:
-        result = await db.execute(select(User).where(User.api_token == token))
-        user = result.scalar_one_or_none()
-
-        if user:
-            await redis_client.setex(cache_key, 3600, user.id)
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or missing API Token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    return user
-
-
-async def get_ws_user(token: str, db: AsyncSession) -> User | None:
+async def _resolve_user(token: str, db: AsyncSession) -> User | None:
+    """Resolve a User from an API token via the Redis cache (by id), DB as fallback."""
     cache_key = f"auth_token:{token}"
     user_id = await redis_client.get(cache_key)
 
@@ -47,8 +21,23 @@ async def get_ws_user(token: str, db: AsyncSession) -> User | None:
 
     result = await db.execute(select(User).where(User.api_token == token))
     user = result.scalar_one_or_none()
-
     if user:
         await redis_client.setex(cache_key, 3600, user.id)
-
     return user
+
+
+async def get_current_user(
+    token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)
+) -> User:
+    user = await _resolve_user(token, db)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing API Token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user
+
+
+async def get_ws_user(token: str, db: AsyncSession) -> User | None:
+    return await _resolve_user(token, db)
