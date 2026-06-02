@@ -4,9 +4,7 @@ from aiogram.filters.command import CommandObject
 from aiogram.types import Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.db.models import parse_lead_hours
-
-from bot.db.models import User
+from bot.db.models import User, parse_lead_hours
 from bot.repositories.bot_settings import BotSettingsRepository
 
 router = Router()

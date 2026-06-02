@@ -33,22 +33,22 @@ def get_structlog_config(log_config: LogConfig) -> dict:
     else:
         min_level = logging.INFO
 
+    processors = get_processors(log_config)
+
     if log_config.allow_third_party_logs:
         # Create handler for stdlib logging
         standard_handler = logging.StreamHandler(stream=stdout)
         standard_handler.setFormatter(
-            structlog.stdlib.ProcessorFormatter(processors=get_processors(log_config))
+            structlog.stdlib.ProcessorFormatter(processors=processors)
         )
 
         # Configure root logger to use this handler
         standard_logger = logging.getLogger()
         standard_logger.addHandler(standard_handler)
-        standard_logger.setLevel(
-            logging.DEBUG if log_config.show_debug_logs else logging.INFO
-        )
+        standard_logger.setLevel(min_level)
 
     return {
-        "processors": get_processors(log_config),
+        "processors": processors,
         "cache_logger_on_first_use": True,
         "wrapper_class": structlog.make_filtering_bound_logger(min_level),
         "logger_factory": WriteLoggerFactory(),
