@@ -12,6 +12,11 @@ export function fab() {
         getAuthConfig,
 
         async init() {
+            await this.loadCategories();
+            window.addEventListener('categories:changed', () => this.loadCategories());
+        },
+
+        async loadCategories() {
             try {
                 const res = await axios.get(`${API_BASE}/categories`, this.getAuthConfig());
                 this.categories = res.data;

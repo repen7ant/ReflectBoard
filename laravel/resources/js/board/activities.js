@@ -101,6 +101,7 @@ export function activityMethods(API_BASE) {
                     color: this.categoryModal.color,
                 }, this.getAuthConfig());
                 this.categories.push(res.data);
+                window.dispatchEvent(new CustomEvent('categories:changed'));
                 this.categoryModal.open = false;
                 this.showToast('Category created');
             } catch (e) {
@@ -116,6 +117,7 @@ export function activityMethods(API_BASE) {
                 if (this.modal.category_id === categoryId) this.modal.category_id = '';
                 if (this.editModal.category_id === categoryId) this.editModal.category_id = '';
                 if (this.projectModal.category_id === categoryId) this.projectModal.category_id = '';
+                window.dispatchEvent(new CustomEvent('categories:changed'));
                 this.showToast('Category deleted');
             } catch (e) {
                 this.showToast('Error deleting category');

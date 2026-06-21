@@ -141,7 +141,24 @@ export function board() {
                 case 'update':  return this.handleWsUpdate(item);
                 case 'delete':  return this.handleWsDelete(item);
                 case 'reorder': return this.loadActivities(false);
+                case 'category_create': return this.handleWsCategoryCreate(item);
+                case 'category_delete': return this.handleWsCategoryDelete(item);
             }
+        },
+
+        handleWsCategoryCreate(item) {
+            if (!this.categories.find(c => c.id === item.id)) {
+                this.categories.push(item);
+                window.dispatchEvent(new CustomEvent('categories:changed'));
+            }
+        },
+
+        handleWsCategoryDelete(item) {
+            this.categories = this.categories.filter(c => c.id !== item.id);
+            if (this.modal.category_id === item.id) this.modal.category_id = '';
+            if (this.editModal.category_id === item.id) this.editModal.category_id = '';
+            if (this.projectModal.category_id === item.id) this.projectModal.category_id = '';
+            window.dispatchEvent(new CustomEvent('categories:changed'));
         },
 
         handleWsCreate(item) {
