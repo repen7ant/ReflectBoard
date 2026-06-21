@@ -29,10 +29,10 @@ Telegram Bot (aiogram 3)
   ├─ REST → FastAPI (Bearer token из users.api_token)
   └─ APScheduler: deadline-уведомления, ежедневные напоминания
 
-Nginx — обратный прокси:
-  :80 /api/*  →  FastAPI :8000
-  :80 /*      →  Laravel/Nginx static + PHP-FPM :9000
-  :5173       →  Vite dev server (только dev)
+Nginx — обратный прокси (маршрутизация по домену, не по пути):
+  reflectboard.local      →  Laravel static + PHP-FPM :9000
+  reflectboard-api.local  →  FastAPI :8000  (REST + WS /api/v1/ws)
+  :5173                   →  Vite dev server (только dev)
 ```
 
 При любом изменении FastAPI публикует событие в Redis-канал `board:{user_id}` → все открытые вкладки получают обновление без перезагрузки. MySQL — единственный источник правды для всех данных включая live-аналитику.

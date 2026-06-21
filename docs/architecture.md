@@ -1,6 +1,6 @@
 # Архитектура и База данных (MySQL)
 
-> UUID хранятся как `CHAR(36)`. Поле `tags` — JSON-колонка.
+> Первичные ключи — `BIGINT` (auto-increment). Поле `tags` — JSON-колонка. Время хранится в UTC.
 
 ## Схема БД
 
@@ -19,8 +19,8 @@
 
 | Поле         | Тип                    | Описание |
 | ------------ | ---------------------- | -------- |
-| `id`         | CHAR(36) PK            | UUID     |
-| `user_id`    | CHAR(36) FK → users.id | Владелец |
+| `id`         | BIGINT PK              | auto-increment |
+| `user_id`    | BIGINT FK → users.id   | Владелец |
 | `name`       | VARCHAR(255) NOT NULL  | Название |
 | `color`      | VARCHAR(7) NOT NULL    | HEX-цвет |
 | `created_at` | TIMESTAMP              |          |
@@ -29,10 +29,10 @@
 
 | Поле                      | Тип                   | Описание                                          |
 | ------------------------- | --------------------- | ------------------------------------------------- |
-| `id`                      | CHAR(36) PK           | UUID                                              |
-| `user_id`                 | CHAR(36) FK NOT NULL  | Владелец                                          |
-| `parent_id`               | CHAR(36) nullable     | Ссылка на проект                                  |
-| `category_id`             | CHAR(36) nullable     | Категория                                         |
+| `id`                      | BIGINT PK             | auto-increment                                    |
+| `user_id`                 | BIGINT FK NOT NULL    | Владелец                                          |
+| `parent_id`               | BIGINT nullable       | Ссылка на проект                                  |
+| `category_id`             | BIGINT nullable       | Категория                                         |
 | `category_snapshot_name`  | VARCHAR(255) nullable | Snapshot имени категории при удалении             |
 | `category_snapshot_color` | VARCHAR(7) nullable   | Snapshot цвета категории при удалении             |
 | `title`                   | VARCHAR(255) NOT NULL | Заголовок                                         |
@@ -75,7 +75,20 @@
 
 ## Real-time обновления (WebSocket)
 
-FastAPI публикует события в Redis-канал `board:{user_id}` при любом изменении активностей. Все открытые вкладки получают обновление без перезагрузки.
+FastAPI публикует события в Redis-канал `board:{user_id}` при любом изменении активностей или категорий. Все открытые вкладки получают обновление без перезагрузки.
+
+Формат события: `{"action": <тип>, "data": <объект>}`. Типы `action`:
+
+| action            | data                | Когда                                    |
+| ----------------- | ------------------- | ---------------------------------------- |
+| `create`          | активность          | Создана активность                       |
+| `update`          | активность          | Изменена активность (в т.ч. log-time)    |
+| `delete`          | `{id}`              | Удалена активность                       |
+| `reorder`         | `{}`                | Изменён порядок карточек                  |
+| `category_create` | категория           | Создана категория                        |
+| `category_delete` | `{id}`              | Удалена категория                        |
+
+Каждое сообщение доставляется всем подписчикам канала, включая вкладку-инициатор, поэтому клиент обрабатывает события идемпотентно (дедупликация по `id`).
 
 **При логировании времени (`POST /activities/{id}/log-time`):**
 1. `time_spent_minutes += minutes`, `time_logged_minutes += minutes` → MySQL

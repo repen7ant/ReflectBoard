@@ -21,6 +21,8 @@
 | POST   | `/activities/reorder` | Изменить порядок карточек в колонке           |
 | GET    | `/activities/done`    | Выполненные (фильтры: search, category, date) |
 | GET    | `/categories`         | Список категорий                              |
-| POST   | `/categories`         | Создать категорию                             |
-| DELETE | `/categories/{id}`    | Удалить категорию (с сохранением snapshot)    |
-| WS     | `/ws?token={jwt}`     | WebSocket real-time события доски             |
+| POST   | `/categories`         | Создать категорию (WS push `category_create`) |
+| DELETE | `/categories/{id}`    | Удалить категорию (snapshot + WS `category_delete`) |
+| WS     | `/api/v1/ws`          | WebSocket real-time события доски             |
+
+> Аутентификация WebSocket: после подключения клиент первым сообщением шлёт `{"token": "<api_token>"}` (тот же Bearer-токен из `users.api_token`, не JWT). Токен в query-параметре не передаётся.
