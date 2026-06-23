@@ -53,6 +53,7 @@ class ActivityService:
         """Set subtasks_total/done for projects and parent_title for subtasks (batched)."""
         project_ids = [a.id for a in activities if a.is_project]
         counts: dict[int, list[int]] = {}  # {project_id: [total, done]}
+        subtask_time: dict[int, int] = {}  # {project_id: summed subtask time}
 
         if project_ids:
             total_result = await db.execute(
@@ -76,6 +77,16 @@ class ActivityService:
                 counts.setdefault(parent_id, [0, 0])
                 counts[parent_id][1] = cnt
 
+            time_result = await db.execute(
+                select(
+                    Activity.parent_id,
+                    func.coalesce(func.sum(Activity.time_spent_minutes), 0),
+                )
+                .where(Activity.parent_id.in_(project_ids))
+                .group_by(Activity.parent_id)
+            )
+            subtask_time = {pid: total for pid, total in time_result.all()}
+
         subtask_ids = [a.parent_id for a in activities if a.parent_id]
         parent_titles: dict[int, str] = {}
         if subtask_ids:
@@ -88,6 +99,10 @@ class ActivityService:
             if a.is_project and a.id in counts:
                 a.subtasks_total = counts[a.id][0]
                 a.subtasks_done = counts[a.id][1]
+                # Display-only: a project's time is the sum of its subtasks'.
+                # Safe because this is the terminal DB op before serialization,
+                # so the dirtied attribute is never flushed/committed.
+                a.time_spent_minutes = subtask_time.get(a.id, 0)
             else:
                 a.subtasks_total = 0
                 a.subtasks_done = 0
