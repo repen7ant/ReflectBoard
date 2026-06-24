@@ -5,7 +5,10 @@ export function formatDate(dt, { withTime = false, showYear = true } = {}) {
     if (isNaN(d.getTime())) return dt;
 
     const dateOpts = { month: 'short', day: 'numeric', ...(showYear ? { year: 'numeric' } : {}) };
-    const isDateOnly = dt.length === 10 || (d.getHours() === 0 && d.getMinutes() === 0 && d.getSeconds() === 0);
+    // No-time deadlines are stored with the 23:59 sentinel (see buildDeadline),
+    // so treat it as "date only" and don't render the time.
+    const isEndOfDay = d.getHours() === 23 && d.getMinutes() === 59;
+    const isDateOnly = dt.length === 10 || isEndOfDay;
 
     if (withTime && !isDateOnly) {
         const datePart = d.toLocaleDateString('en-US', dateOpts);

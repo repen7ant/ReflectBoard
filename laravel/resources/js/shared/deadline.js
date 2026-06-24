@@ -1,5 +1,5 @@
 // Parse activity.deadline ISO string → form fields {date, time}
-// Time "00:00" treated as empty (no time specified).
+// Time "23:59" treated as empty (no time specified).
 export function parseDeadline(dt) {
     if (!dt) return { date: '', time: '' };
     const [datePart, timePart = ''] = dt.split('T');
