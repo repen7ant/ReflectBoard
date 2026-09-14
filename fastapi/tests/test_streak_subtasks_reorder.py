@@ -240,3 +240,29 @@ class TestReorder:
         await db.refresh(other)
         # other user's activity position must not change
         assert other.position == 5
+
+    async def test_reorder_rejects_unknown_status(
+        self, client: AsyncClient, db: AsyncSession, test_user: User
+    ):
+        a = Activity(user_id=test_user.id, title="A", status=Status.backlog, position=0)
+        db.add(a)
+        await db.commit()
+
+        res = await client.post("/api/v1/activities/reorder", json={
+            "activity_id": a.id,
+            "new_status": "not_a_status",
+            "ordered_ids": [a.id],
+        })
+        assert res.status_code == 422
+
+    async def test_reorder_rejects_non_list_ordered_ids(self, client: AsyncClient):
+        res = await client.post("/api/v1/activities/reorder", json={
+            "ordered_ids": "oops",
+        })
+        assert res.status_code == 422
+
+    async def test_reorder_rejects_non_integer_ordered_ids(self, client: AsyncClient):
+        res = await client.post("/api/v1/activities/reorder", json={
+            "ordered_ids": ["a", "b"],
+        })
+        assert res.status_code == 422

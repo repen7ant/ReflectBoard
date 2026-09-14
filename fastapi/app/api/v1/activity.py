@@ -6,7 +6,13 @@ from app.db.session import get_db
 from app.dependencies.auth import get_current_user
 from app.models.activity import Activity, Status
 from app.models.user import User
-from app.schemas.activity import ActivityCreate, ActivityOut, ActivityUpdate, LogTimeRequest
+from app.schemas.activity import (
+    ActivityCreate,
+    ActivityOut,
+    ActivityUpdate,
+    LogTimeRequest,
+    ReorderRequest,
+)
 from app.services.activity_service import ActivityService
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -146,20 +152,16 @@ async def log_time(
 
 @router.post("/activities/reorder")
 async def reorder_activities(
-    data: dict,
+    data: ReorderRequest,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    activity_id = data.get("activity_id")
-    new_status = data.get("new_status")
-    ordered_ids = data.get("ordered_ids", [])
-
     await ActivityService.reorder_activities(
         db=db,
         user_id=current_user.id,
-        activity_id=activity_id,
-        new_status=new_status,
-        ordered_ids=ordered_ids,
+        activity_id=data.activity_id,
+        new_status=data.new_status,
+        ordered_ids=data.ordered_ids,
     )
 
     await _publish(current_user.id, "reorder", {})

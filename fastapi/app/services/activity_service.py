@@ -339,7 +339,7 @@ class ActivityService:
         db: AsyncSession,
         user_id: int,
         activity_id: int | None,
-        new_status: str | None,
+        new_status: Status | None,
         ordered_ids: list[int],
     ) -> None:
         if activity_id and new_status:

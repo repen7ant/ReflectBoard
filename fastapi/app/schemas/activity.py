@@ -75,3 +75,9 @@ class ActivityCreate(BaseModel):
 
 class LogTimeRequest(BaseModel):
     minutes: int = Field(gt=0)
+
+
+class ReorderRequest(BaseModel):
+    activity_id: int | None = None
+    new_status: Status | None = None
+    ordered_ids: list[int] = Field(default_factory=list)
