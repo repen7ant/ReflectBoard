@@ -6,10 +6,38 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.activity import Activity, Status
+from app.models.category import Category
 from app.schemas.activity import ActivityCreate
 
 
+class ForeignReferenceError(Exception):
+    """An activity references a category or parent owned by somebody else."""
+
+
 class ActivityService:
+    @staticmethod
+    async def _assert_refs_owned(
+        db: AsyncSession, user_id: int, category_id: int | None, parent_id: int | None
+    ) -> None:
+        """Reject references to a category/parent that isn't the user's own."""
+        if category_id is not None:
+            result = await db.execute(
+                select(Category.id).where(
+                    Category.id == category_id, Category.user_id == user_id
+                )
+            )
+            if result.scalar_one_or_none() is None:
+                raise ForeignReferenceError("Category not found or not yours")
+
+        if parent_id is not None:
+            result = await db.execute(
+                select(Activity.id).where(
+                    Activity.id == parent_id, Activity.user_id == user_id
+                )
+            )
+            if result.scalar_one_or_none() is None:
+                raise ForeignReferenceError("Parent activity not found or not yours")
+
     @staticmethod
     async def get_activity_by_id(
         db: AsyncSession, activity_id: int, user_id: int
@@ -31,7 +59,10 @@ class ActivityService:
         """Calculate and set subtasks_total and subtasks_done for a project"""
         if activity.is_project:
             total_result = await db.execute(
-                select(func.count()).where(Activity.parent_id == activity.id)
+                select(func.count()).where(
+                    Activity.parent_id == activity.id,
+                    Activity.user_id == activity.user_id,
+                )
             )
             activity.subtasks_total = total_result.scalar() or 0
 
@@ -39,6 +70,7 @@ class ActivityService:
                 select(func.count()).where(
                     Activity.parent_id == activity.id,
                     Activity.status == Status.done,
+                    Activity.user_id == activity.user_id,
                 )
             )
             activity.subtasks_done = done_result.scalar() or 0
@@ -48,7 +80,7 @@ class ActivityService:
 
     @staticmethod
     async def _attach_subtask_meta(
-        db: AsyncSession, activities: Sequence[Activity]
+        db: AsyncSession, activities: Sequence[Activity], user_id: int
     ) -> None:
         """Set subtasks_total/done for projects and parent_title for subtasks (batched)."""
         project_ids = [a.id for a in activities if a.is_project]
@@ -58,7 +90,10 @@ class ActivityService:
         if project_ids:
             total_result = await db.execute(
                 select(Activity.parent_id, func.count().label("cnt"))
-                .where(Activity.parent_id.in_(project_ids))
+                .where(
+                    Activity.parent_id.in_(project_ids),
+                    Activity.user_id == user_id,
+                )
                 .group_by(Activity.parent_id)
             )
             for parent_id, cnt in total_result.all():
@@ -70,6 +105,7 @@ class ActivityService:
                 .where(
                     Activity.parent_id.in_(project_ids),
                     Activity.status == Status.done,
+                    Activity.user_id == user_id,
                 )
                 .group_by(Activity.parent_id)
             )
@@ -82,7 +118,10 @@ class ActivityService:
                     Activity.parent_id,
                     func.coalesce(func.sum(Activity.time_spent_minutes), 0),
                 )
-                .where(Activity.parent_id.in_(project_ids))
+                .where(
+                    Activity.parent_id.in_(project_ids),
+                    Activity.user_id == user_id,
+                )
                 .group_by(Activity.parent_id)
             )
             subtask_time = {pid: total for pid, total in time_result.all()}
@@ -91,7 +130,9 @@ class ActivityService:
         parent_titles: dict[int, str] = {}
         if subtask_ids:
             parent_result = await db.execute(
-                select(Activity.id, Activity.title).where(Activity.id.in_(subtask_ids))
+                select(Activity.id, Activity.title).where(
+                    Activity.id.in_(subtask_ids), Activity.user_id == user_id
+                )
             )
             parent_titles = {pid: title for pid, title in parent_result.all()}
 
@@ -163,7 +204,7 @@ class ActivityService:
         result = await db.execute(query)
         activities = result.scalars().all()
 
-        await ActivityService._attach_subtask_meta(db, activities)
+        await ActivityService._attach_subtask_meta(db, activities, user_id)
 
         return activities
 
@@ -189,6 +230,13 @@ class ActivityService:
     ) -> tuple[Activity, Activity | None]:
         """Create activity and return (activity, parent_project_if_updated)"""
         activity_dict = data.model_dump(exclude={"user_id"}, exclude_unset=True)
+
+        await ActivityService._assert_refs_owned(
+            db,
+            user_id,
+            activity_dict.get("category_id"),
+            activity_dict.get("parent_id"),
+        )
 
         if activity_dict.get("is_quick_capture"):
             activity_dict["status"] = Status.done
@@ -242,6 +290,13 @@ class ActivityService:
 
         if not activity:
             return None, None
+
+        await ActivityService._assert_refs_owned(
+            db,
+            user_id,
+            update_data.get("category_id"),
+            update_data.get("parent_id"),
+        )
 
         # If subtask is being added to board, inherit category and deadline from parent
         if activity.parent_id and update_data.get("is_on_board") is True:
@@ -349,6 +404,6 @@ class ActivityService:
         result = await db.execute(query)
         activities = result.scalars().all()
 
-        await ActivityService._attach_subtask_meta(db, activities)
+        await ActivityService._attach_subtask_meta(db, activities, user_id)
 
         return activities

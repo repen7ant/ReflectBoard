@@ -37,7 +37,7 @@ class CategoryService:
 
         await db.execute(
             update(Activity)
-            .where(Activity.category_id == category_id)
+            .where(Activity.category_id == category_id, Activity.user_id == user_id)
             .values(
                 category_snapshot_name=category.name,
                 category_snapshot_color=category.color,
