@@ -1,7 +1,7 @@
 from collections import defaultdict
 from datetime import datetime, time, timedelta, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -45,14 +45,19 @@ class AnalyticsService:
         result = await db.execute(query)
         activities = result.scalars().all()
 
-        # ── Base query for created tasks (for completion rate) ──
-        created_query = select(func.count()).where(
-            Activity.user_id == user_id,
-        )
+        # ── Completion rate is measured over the tasks *created* in the period:
+        # "of what I started, how much did I finish". Counting tasks completed in
+        # the period against tasks created in it mixes two different cohorts and
+        # can exceed 100%.
+        created_query = select(
+            func.count(),
+            func.coalesce(
+                func.sum(case((Activity.status == Status.done, 1), else_=0)), 0
+            ),
+        ).where(Activity.user_id == user_id)
         if date_from:
             created_query = created_query.where(Activity.created_at >= date_from)
-        created_result = await db.execute(created_query)
-        total_created = created_result.scalar() or 0
+        total_created, created_and_done = (await db.execute(created_query)).one()
 
         # ── Overview metrics ──────────────────────────────────
         total_done = len(activities)
@@ -62,7 +67,7 @@ class AnalyticsService:
         productive_minutes = sum(a.time_spent_minutes or 0 for a in activities if a.is_productive)
         unproductive_minutes = sum(a.time_spent_minutes or 0 for a in activities if not a.is_productive)
         completion_rate = (
-            round(total_done / total_created * 100) if total_created > 0 else 0
+            round(created_and_done / total_created * 100) if total_created > 0 else 0
         )
         streak = await AnalyticsService._calculate_streak(db, user_id, tz_offset)
 

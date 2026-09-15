@@ -3,7 +3,7 @@ from app.models.activity import Activity, Status
 from app.models.user import User
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 pytestmark = pytest.mark.asyncio
 
@@ -115,3 +115,69 @@ class TestAnalytics:
 
         res = await client.get("/api/v1/analytics?period=all&tz_offset=0")
         assert res.json()["heatmap"].get("2026-05-23") == 1
+
+    async def test_completion_rate_never_exceeds_100(
+        self, client: AsyncClient, db: AsyncSession, test_user: User
+    ):
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        long_ago = now - timedelta(days=200)
+        for i in range(10):
+            db.add(Activity(
+                user_id=test_user.id,
+                title=f"old-{i}",
+                status=Status.done,
+                completed_at=now,
+                created_at=long_ago,
+            ))
+        db.add(Activity(
+            user_id=test_user.id, title="new", status=Status.backlog, created_at=now
+        ))
+        await db.commit()
+
+        res = await client.get("/api/v1/analytics?period=7d")
+
+        assert res.json()["overview"]["completion_rate"] <= 100
+
+    async def test_completion_rate_ignores_tasks_created_before_period(
+        self, client: AsyncClient, db: AsyncSession, test_user: User
+    ):
+        """A task created long ago says nothing about this period's follow-through."""
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        db.add(Activity(
+            user_id=test_user.id,
+            title="started long ago",
+            status=Status.done,
+            completed_at=now,
+            created_at=now - timedelta(days=200),
+        ))
+        db.add(Activity(
+            user_id=test_user.id,
+            title="started this week",
+            status=Status.backlog,
+            created_at=now,
+        ))
+        await db.commit()
+
+        res = await client.get("/api/v1/analytics?period=7d")
+
+        assert res.json()["overview"]["completion_rate"] == 0
+
+    async def test_completion_rate_counts_tasks_created_and_done_in_period(
+        self, client: AsyncClient, db: AsyncSession, test_user: User
+    ):
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        db.add(Activity(
+            user_id=test_user.id,
+            title="done",
+            status=Status.done,
+            completed_at=now,
+            created_at=now,
+        ))
+        db.add(Activity(
+            user_id=test_user.id, title="open", status=Status.backlog, created_at=now
+        ))
+        await db.commit()
+
+        res = await client.get("/api/v1/analytics?period=7d")
+
+        assert res.json()["overview"]["completion_rate"] == 50
