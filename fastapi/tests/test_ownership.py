@@ -149,6 +149,7 @@ async def test_single_activity_counters_ignore_foreign_rows(
             fresh, project.id, test_user.id
         )
 
+    assert fetched is not None
     assert fetched.subtasks_total == 0
 
 
