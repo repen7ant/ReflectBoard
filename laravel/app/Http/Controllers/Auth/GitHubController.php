@@ -19,13 +19,11 @@ class GitHubController extends Controller
     {
         $githubUser = Socialite::driver('github')->user();
 
-        $user = User::updateOrCreate([
-            'email' => $githubUser->email,
-        ], [
-            'github_id' => $githubUser->id,
-            // Если юзер создается впервые, даем ему случайный пароль для безопасности
-            'password' => bcrypt(Str::random(24)),
-        ]);
+        $user = User::firstOrCreate(
+            ['email' => $githubUser->email],
+            ['password' => bcrypt(Str::random(24))],
+        );
+        $user->update(['github_id' => $githubUser->id]);
 
         Auth::login($user);
 

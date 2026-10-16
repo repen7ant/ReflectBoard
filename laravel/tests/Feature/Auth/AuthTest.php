@@ -4,6 +4,11 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\GithubProvider;
+use Laravel\Socialite\Two\User as SocialiteUser;
+use Mockery;
 use Tests\TestCase;
 
 class AuthTest extends TestCase
@@ -159,5 +164,58 @@ class AuthTest extends TestCase
         $response = $this->actingAs($user)->get('/login');
 
         $response->assertRedirect('/board');
+    }
+
+    public function test_github_login_keeps_existing_password(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'user@example.com',
+            'password' => bcrypt('Password123!'),
+        ]);
+        $this->fakeGitHubUser('user@example.com');
+
+        $response = $this->get('/auth/github/callback');
+
+        $response->assertRedirect('/board');
+        $this->assertAuthenticatedAs($user);
+        $this->assertTrue(Hash::check('Password123!', $user->fresh()->password));
+    }
+
+    public function test_github_login_links_existing_account(): void
+    {
+        $user = User::factory()->create(['email' => 'user@example.com']);
+        $this->fakeGitHubUser('user@example.com');
+
+        $this->get('/auth/github/callback');
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertSame('12345', $user->fresh()->github_id);
+    }
+
+    public function test_github_login_creates_new_user(): void
+    {
+        $this->fakeGitHubUser('new@example.com');
+
+        $response = $this->get('/auth/github/callback');
+
+        $response->assertRedirect('/board');
+        $this->assertAuthenticated();
+        $this->assertDatabaseHas('users', ['email' => 'new@example.com', 'github_id' => '12345']);
+    }
+
+    private function fakeGitHubUser(string $email): void
+    {
+        $githubUser = (new SocialiteUser)->map([
+            'id' => 12345,
+            'nodeId' => 'MDQ6VXNlcjEyMzQ1',
+            'nickname' => 'octocat',
+            'name' => 'Octo Cat',
+            'email' => $email,
+            'avatar' => 'https://avatars.githubusercontent.com/u/12345',
+        ]);
+
+        $provider = Mockery::mock(GithubProvider::class);
+        $provider->shouldReceive('user')->andReturn($githubUser);
+        Socialite::shouldReceive('driver')->with('github')->andReturn($provider);
     }
 }
